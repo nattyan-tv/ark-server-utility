@@ -19,25 +19,24 @@ namespace ark_server_utility
         {
             if (!File.Exists(@"settings.json"))
             {
-                string myPythonApp = "make_file.py";
+                string myPythonApp = "settings.py";
                 var myProcess = new Process
                 {
                     StartInfo = new ProcessStartInfo("python")
                     {
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
-                        Arguments = myPythonApp + "first"
+                        Arguments = myPythonApp + " first",
+                        CreateNoWindow = true
                     }
                 };
-                myProcess.CreateNoWindow = true;
-                myProcess.UseShellExecute = false;
                 myProcess.Start();
                 StreamReader myStreamReader = myProcess.StandardOutput;
                 string myString = myStreamReader.ReadLine();
                 myProcess.WaitForExit();
                 myProcess.Close();
                 string[,] settings_data = new string[99, 3];
-                Console.WriteLine(myString)
+                Console.WriteLine(myString);
             }
             InitializeComponent();
             main_pbar.Value = 100;
