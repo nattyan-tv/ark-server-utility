@@ -1,22 +1,11 @@
 ﻿using System;
-using System.Net;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Diagnostics;
+using System.Net;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace ark_server_utility
 {
@@ -28,6 +17,10 @@ namespace ark_server_utility
         public MainWindow()
         {
             InitializeComponent();
+            main_pbar.Value = 100;
+            main_ptext.Content = "ARK: Server Utility";
+            label_name.Content = "サーバー名："+server_name.Text;
+            label_map.Content = "マップ名：" + map.Text;
         }
 
         private void exit_app(object sender, RoutedEventArgs e)
@@ -36,7 +29,7 @@ namespace ark_server_utility
         }
         private async void install_steamCMD(object sender, RoutedEventArgs e)
         {
-            DialogResult dr = System.Windows.Forms.MessageBox.Show("SteamCMDのインストールには時間がかかります。\n実行してもよろしいですか？","ARK Server Utility",MessageBoxButtons.OKCancel, MessageBoxIcon.Asterisk);
+            DialogResult dr = System.Windows.Forms.MessageBox.Show("SteamCMDのインストールには時間がかかります。\n実行してもよろしいですか？", "ARK Server Utility", MessageBoxButtons.OKCancel, MessageBoxIcon.Asterisk);
             if (dr == System.Windows.Forms.DialogResult.Cancel)
             {
                 return;
@@ -81,7 +74,7 @@ namespace ark_server_utility
         }
         private void launch_steamCMD(object sender, RoutedEventArgs e)
         {
-            if (Directory.Exists(@"SteamCMD") == false) 
+            if (Directory.Exists(@"SteamCMD") == false)
             {
                 System.Windows.Forms.MessageBox.Show("SteamCMDがインストールされていません。\n「ゲームデータ」より「SteamCMD」のインストールを選択してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
                 return;
@@ -107,8 +100,8 @@ namespace ark_server_utility
                 return;
             }
             System.IO.DirectoryInfo steamcmd_del = new System.IO.DirectoryInfo(@"SteamCMD");
-            try 
-            { 
+            try
+            {
                 steamcmd_del.Delete(true);
             }
             catch (IOException err)
@@ -118,6 +111,75 @@ namespace ark_server_utility
             }
 
             System.Windows.Forms.MessageBox.Show("SteamCMDのアンインストールが完了しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+        }
+        private void install_arkgame(object sender, RoutedEventArgs e)
+        {
+            DialogResult dr = System.Windows.Forms.MessageBox.Show("ARKサーバーのデータをインストールを開始してもよろしいですか？\n時間がかかる場合があります。", "ARK Server Utility", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation);
+            if (dr == System.Windows.Forms.DialogResult.Cancel)
+            {
+                return;
+            }
+            if (Directory.Exists(@"SteamCMD") == false)
+            {
+                Console.WriteLine("ディレクトリ「SteamCMD」がありませんでした。");
+                System.Windows.Forms.MessageBox.Show("SteamCMDがインストールされていません。\n「ゲームデータ」より「SteamCMD」のインストールを選択してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                return;
+            }
+            else if (Directory.Exists(@"ARK") == true)
+            {
+                Console.WriteLine("ディレクトリ「ARK」がありました。");
+                System.Windows.Forms.MessageBox.Show("ゲームサーバーが既にあります。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                return;
+            }
+            ProcessStartInfo processStartInfo = new ProcessStartInfo(@"SteamCMD\\steamcmd.exe", "+login anonymous +force_install_dir \"ARK\" +app_update 376030 +quit");
+            Process steamcmd_installer = Process.Start(processStartInfo);
+            steamcmd_installer.WaitForExit();
+            int exitCode = steamcmd_installer.ExitCode;
+            steamcmd_installer.Close();
+            Console.WriteLine(exitCode);
+        }
+        private void uninstall_arkgame(object sender, RoutedEventArgs e)
+        {
+            if (Directory.Exists(@"ARK") == false)
+            {
+                System.Windows.Forms.MessageBox.Show("ゲームデータがありませんでした。\nインストールするには「ゲームデータ」から「ARKサーバーのダウンロード」を押してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                return;
+            }
+            DialogResult dr = System.Windows.Forms.MessageBox.Show("ゲームサーバーのデータを削除してもよろしいですか？", "ARK Server Utility", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation);
+            if (dr == System.Windows.Forms.DialogResult.OK)
+            {
+                try
+                {
+                    System.IO.DirectoryInfo ark_del = new System.IO.DirectoryInfo(@"ARK");
+                    ark_del.Delete(true);
+                }
+                catch (IOException err)
+                {
+                    System.Windows.Forms.MessageBox.Show("ゲームデータの削除中にエラーが発生しました。サーバーが実行されている場合は停止してください。\n" + err.Message, "ARK Server Utility", MessageBoxButtons.YesNo, MessageBoxIcon.Hand);
+                    return;
+                }
+                System.Windows.Forms.MessageBox.Show("データを削除しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+            }
+        }
+
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if(join_pass.IsEnabled == true)
+            {
+                join_pass.IsEnabled = false;
+            }
+            else
+            {
+                join_pass.IsEnabled = true;
+            }
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            label_name.Content = "サーバー名：" + server_name.Text;
+            label_map.Content = "マップ名：" + map.Text;
+            System.Windows.Forms.MessageBox.Show("保存しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+
         }
     }
 
