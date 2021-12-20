@@ -35,8 +35,7 @@
         <Label Content="データディレクトリ：Loading..." Margin="10,97,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left" Width="1003"/>
         <Button Content="サーバーの開始" Margin="0,23,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252"/>
         <Button Content="設定の保存" Margin="0,60,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" Click="Button_Click"/>
-        <Button Content="データの移動" Margin="0,97,136,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="126"/>
-        <Button Content="データの閲覧" Margin="0,97,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="126"/>
+        <Button Content="インストール" Margin="0,97,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252"/>
         <TabControl Margin="0,139,0,37">
             <TabItem Header="Server1" FontSize="16">
                 <Grid Background="#FFE5E5E5">

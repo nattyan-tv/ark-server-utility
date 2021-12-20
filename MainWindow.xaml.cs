@@ -6,6 +6,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
+using System.Text.Json;
 
 namespace ark_server_utility
 {
@@ -16,10 +17,30 @@ namespace ark_server_utility
     {
         public MainWindow()
         {
+            if (!File.Exists(@"settings.json"))
+            {
+                string myPythonApp = "make_file.py";
+
+                var myProcess = new Process
+                {
+                    StartInfo = new ProcessStartInfo("python.exe")
+                    {
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        Arguments = myPythonApp + "firstrun"
+                    }
+                };
+                myProcess.Start();
+                myProcess.WaitForExit();
+                myProcess.Close();
+            }
+
             InitializeComponent();
             main_pbar.Value = 100;
+
+
             main_ptext.Content = "ARK: Server Utility";
-            label_name.Content = "サーバー名："+server_name.Text;
+            label_name.Content = "サーバー名：" + "a";
             label_map.Content = "マップ名：" + map.Text;
         }
 
