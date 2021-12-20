@@ -20,25 +20,27 @@ namespace ark_server_utility
             if (!File.Exists(@"settings.json"))
             {
                 string myPythonApp = "make_file.py";
-
                 var myProcess = new Process
                 {
-                    StartInfo = new ProcessStartInfo("python.exe")
+                    StartInfo = new ProcessStartInfo("python")
                     {
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
-                        Arguments = myPythonApp + "firstrun"
+                        Arguments = myPythonApp + "first"
                     }
                 };
+                myProcess.CreateNoWindow = true;
+                myProcess.UseShellExecute = false;
                 myProcess.Start();
+                StreamReader myStreamReader = myProcess.StandardOutput;
+                string myString = myStreamReader.ReadLine();
                 myProcess.WaitForExit();
                 myProcess.Close();
+                string[,] settings_data = new string[99, 3];
+                Console.WriteLine(myString)
             }
-
             InitializeComponent();
             main_pbar.Value = 100;
-
-
             main_ptext.Content = "ARK: Server Utility";
             label_name.Content = "サーバー名：" + "a";
             label_map.Content = "マップ名：" + map.Text;
