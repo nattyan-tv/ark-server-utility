@@ -17,9 +17,12 @@ namespace ark_server_utility
     {
         public MainWindow()
         {
+            InitializeComponent();
+            main_pbar.Value = 25;
+            main_ptext.Content = "設定ファイル読み込み中...";
             if (!File.Exists(@"settings.json"))
             {
-                string myPythonApp = "settings.py";
+                string myPythonApp = "python/settings.py";
                 var myProcess = new Process
                 {
                     StartInfo = new ProcessStartInfo("python")
@@ -31,18 +34,50 @@ namespace ark_server_utility
                     }
                 };
                 myProcess.Start();
-                StreamReader myStreamReader = myProcess.StandardOutput;
-                string myString = myStreamReader.ReadLine();
                 myProcess.WaitForExit();
                 myProcess.Close();
-                string[,] settings_data = new string[99, 3];
-                Console.WriteLine(myString);
+                main_pbar.Value = 50;
+                main_ptext.Content = "設定ファイルを作成しました。";
+                /// string[,] settings_data = new string[99, 3];
             }
-            InitializeComponent();
+            string read_set = "python/settings.py";
+            var read_pro = new Process
+            {
+                StartInfo = new ProcessStartInfo("python")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    Arguments = read_set + " read 1",
+                    CreateNoWindow = true
+                }
+            };
+            read_pro.Start();
+            StreamReader read_str = read_pro.StandardOutput;
+            string data_1 = read_str.ReadLine();
+            read_pro.WaitForExit();
+            read_pro.Close();
+            string[] arr = data_1.Split(',');
+            label_name.Content = "サーバー名：" + arr[0];
+            label_map.Content = "マップ名：" + arr[1];
+            label_dir.Content = "ディレクトリ：" + arr[2];
+            main_pbar.Value = 75;
+            main_ptext.Content = "データを読み込みました。";
+            if (!File.Exists(@arr[2] + @"/ShooterGameServer.exe"))
+            {
+                start_server.IsEnabled = false;
+                install_server.Content = "インストール";
+            }
+            else
+            {
+                start_server.IsEnabled = true;
+                install_server.Content = "アンインストール";
+            }
+            server_name.Text = arr[0];
+            map.Text = arr[1];
+            server_dir.Text = arr[2];
+            server_list.Text = arr[0];
             main_pbar.Value = 100;
             main_ptext.Content = "ARK: Server Utility";
-            label_name.Content = "サーバー名：" + "a";
-            label_map.Content = "マップ名：" + map.Text;
         }
 
         private void exit_app(object sender, RoutedEventArgs e)
@@ -98,12 +133,12 @@ namespace ark_server_utility
         {
             if (Directory.Exists(@"SteamCMD") == false)
             {
-                System.Windows.Forms.MessageBox.Show("SteamCMDがインストールされていません。\n「ゲームデータ」より「SteamCMD」のインストールを選択してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                System.Windows.Forms.MessageBox.Show("SteamCMDがインストールされていません。\n「SteamCMD」より「SteamCMDのインストール」を選択してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
                 return;
             }
             if (File.Exists(@"SteamCMD\\steamcmd.exe") == false)
             {
-                System.Windows.Forms.MessageBox.Show("SteamCMDがインストールされていません。\n「ゲームデータ」より「SteamCMD」のインストールを選択してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                System.Windows.Forms.MessageBox.Show("SteamCMDがインストールされていません。\n「SteamCMD」より「SteamCMDのインストール」を選択してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
                 return;
             }
             ProcessStartInfo processStartInfo = new ProcessStartInfo(@"SteamCMD\\steamcmd.exe");
@@ -134,55 +169,6 @@ namespace ark_server_utility
 
             System.Windows.Forms.MessageBox.Show("SteamCMDのアンインストールが完了しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
         }
-        private void install_arkgame(object sender, RoutedEventArgs e)
-        {
-            DialogResult dr = System.Windows.Forms.MessageBox.Show("ARKサーバーのデータをインストールを開始してもよろしいですか？\n時間がかかる場合があります。", "ARK Server Utility", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation);
-            if (dr == System.Windows.Forms.DialogResult.Cancel)
-            {
-                return;
-            }
-            if (Directory.Exists(@"SteamCMD") == false)
-            {
-                Console.WriteLine("ディレクトリ「SteamCMD」がありませんでした。");
-                System.Windows.Forms.MessageBox.Show("SteamCMDがインストールされていません。\n「ゲームデータ」より「SteamCMD」のインストールを選択してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
-                return;
-            }
-            else if (Directory.Exists(@"ARK") == true)
-            {
-                Console.WriteLine("ディレクトリ「ARK」がありました。");
-                System.Windows.Forms.MessageBox.Show("ゲームサーバーが既にあります。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
-                return;
-            }
-            ProcessStartInfo processStartInfo = new ProcessStartInfo(@"SteamCMD\\steamcmd.exe", "+login anonymous +force_install_dir \"ARK\" +app_update 376030 +quit");
-            Process steamcmd_installer = Process.Start(processStartInfo);
-            steamcmd_installer.WaitForExit();
-            int exitCode = steamcmd_installer.ExitCode;
-            steamcmd_installer.Close();
-            Console.WriteLine(exitCode);
-        }
-        private void uninstall_arkgame(object sender, RoutedEventArgs e)
-        {
-            if (Directory.Exists(@"ARK") == false)
-            {
-                System.Windows.Forms.MessageBox.Show("ゲームデータがありませんでした。\nインストールするには「ゲームデータ」から「ARKサーバーのダウンロード」を押してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-                return;
-            }
-            DialogResult dr = System.Windows.Forms.MessageBox.Show("ゲームサーバーのデータを削除してもよろしいですか？", "ARK Server Utility", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation);
-            if (dr == System.Windows.Forms.DialogResult.OK)
-            {
-                try
-                {
-                    System.IO.DirectoryInfo ark_del = new System.IO.DirectoryInfo(@"ARK");
-                    ark_del.Delete(true);
-                }
-                catch (IOException err)
-                {
-                    System.Windows.Forms.MessageBox.Show("ゲームデータの削除中にエラーが発生しました。サーバーが実行されている場合は停止してください。\n" + err.Message, "ARK Server Utility", MessageBoxButtons.YesNo, MessageBoxIcon.Hand);
-                    return;
-                }
-                System.Windows.Forms.MessageBox.Show("データを削除しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-            }
-        }
 
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
@@ -200,8 +186,144 @@ namespace ark_server_utility
         {
             label_name.Content = "サーバー名：" + server_name.Text;
             label_map.Content = "マップ名：" + map.Text;
+            label_dir.Content = "ディレクトリ：" + server_dir.Text;
+            string edit_set = "python/settings.py";
+            var edit_pro = new Process
+            {
+                StartInfo = new ProcessStartInfo("python")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    Arguments = edit_set + " edit 1 " + server_name.Text + " " + map.Text + " " + server_dir.Text,
+                    CreateNoWindow = true
+                }
+            };
+            edit_pro.Start();
+            edit_pro.WaitForExit();
+            edit_pro.Close();
             System.Windows.Forms.MessageBox.Show("保存しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+        }
 
+        private void install_server_Click(object sender, RoutedEventArgs e)
+        {
+            if (File.Exists(@server_dir.Text + @"/ShooterGameServer.exe"))
+            {
+                DialogResult dr = System.Windows.Forms.MessageBox.Show("ARKのサーバーデータをアンインストールしてもよろしいですか？\n再度インストールするまでサーバーは起動できません。\nアンインストールには時間がかかります。", "ARK Server Utility", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation);
+                if (dr == System.Windows.Forms.DialogResult.Cancel)
+                {
+                    return;
+                }
+                /// サーバーが起動している場合は終了する的な処理を。
+                string read_set = "python/settings.py";
+                var read_pro = new Process
+                {
+                    StartInfo = new ProcessStartInfo("python")
+                    {
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        Arguments = read_set + " read 1",
+                        CreateNoWindow = true
+                    }
+                };
+                read_pro.Start();
+                StreamReader read_str = read_pro.StandardOutput;
+                string data = read_str.ReadLine();
+                read_pro.WaitForExit();
+                read_pro.Close();
+                string[] arr = data.Split(',');
+                main_pbar.Value = 0;
+                main_ptext.Content = "データアンインストール処理中...";
+                try
+                {
+                    Directory.Delete(@arr[2]);
+                }
+                catch
+                {
+                    System.Windows.Forms.MessageBox.Show("データの削除中にエラーが発生しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                    main_pbar.Value = 100;
+                    main_ptext.Content = "ARK: Server Utility";
+                    return;
+                }
+                main_pbar.Value = 100;
+                main_ptext.Content = "データの削除が完了しました。";
+                System.Windows.Forms.MessageBox.Show("データの削除が完了しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                start_server.IsEnabled = false;
+                install_server.Content = "インストール";
+                main_ptext.Content = "ARK: Server Utility";
+                return;
+            }
+            else
+            {
+                DialogResult dr = System.Windows.Forms.MessageBox.Show("ARKのサーバーデータをインストールしてもよろしいですか？\nインストールには時間がかかります。", "ARK Server Utility", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation);
+                if (dr == System.Windows.Forms.DialogResult.Cancel)
+                {
+                    return;
+                }
+                main_pbar.Value = 0;
+                main_ptext.Content = "SteamCMDチェック中...";
+                if (Directory.Exists(@"SteamCMD") == false)
+                {
+                    System.Windows.Forms.MessageBox.Show("SteamCMDがインストールされていません。\n「SteamCMD」より「SteamCMDのインストール」を選択してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                    return;
+                }
+                if (File.Exists(@"SteamCMD\\steamcmd.exe") == false)
+                {
+                    System.Windows.Forms.MessageBox.Show("SteamCMDがインストールされていません。\n「SteamCMD」より「SteamCMDのインストール」を選択してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                    return;
+                }
+                
+                main_pbar.Value = 25;
+                main_ptext.Content = "SteamCMDチェック完了...";
+                /// 設定読み込み
+                
+                main_pbar.Value = 50;
+                main_ptext.Content = "インストール処理中...";
+                string read_set = "python/settings.py";
+                var read_pro = new Process
+                {
+                    StartInfo = new ProcessStartInfo("python")
+                    {
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        Arguments = read_set + " read 1",
+                        CreateNoWindow = true
+                    }
+                };
+                read_pro.Start();
+                StreamReader read_str = read_pro.StandardOutput;
+                string data = read_str.ReadLine();
+                read_pro.WaitForExit();
+                read_pro.Close();
+                string[] arr = data.Split(',');
+
+                main_pbar.Value = 75;
+                main_ptext.Content = "インストール処理中...";
+                /// SteamCMDよりARKをダウンロード
+                ProcessStartInfo processStartInfo = new ProcessStartInfo(@"SteamCMD\\steamcmd.exe", "+login anonymous +force_install_dir " + @arr[2] + " +app_update 376030 +quit");
+                Process steamcmd_installer = Process.Start(processStartInfo);
+                steamcmd_installer.WaitForExit();
+                int exitCode = steamcmd_installer.ExitCode;
+                steamcmd_installer.Close();
+                Console.WriteLine(exitCode);
+                if (exitCode == 1)
+                {
+                    main_pbar.Value = 100;
+                    main_ptext.Content = "インストールに成功しました。";
+                    System.Windows.Forms.MessageBox.Show("インストールに成功しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                    start_server.IsEnabled = true;
+                    install_server.Content = "アンインストール";
+                    main_ptext.Content = "ARK: Server Utility";
+                    return;
+                }
+                else
+                {
+                    main_pbar.Value = 100;
+                    main_ptext.Content = "インストールに失敗しました。";
+                    System.Windows.Forms.MessageBox.Show("正常にインストールが終了しませんでした。\n再度やり直してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                    main_ptext.Content = "ARK: Server Utility";
+                    return;
+                }
+            }
         }
     }
 
