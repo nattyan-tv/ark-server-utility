@@ -19,6 +19,9 @@
                 <MenuItem Header="起動" Click="launch_steamCMD"/>
                 <MenuItem Header="アンインストール" Click="uninstall_steamCMD"/>
             </MenuItem>
+            <MenuItem Header="Debug">
+                <MenuItem Header="Start current server" Click="start_debug"/>
+            </MenuItem>
         </Menu>
         <StatusBar Margin="0,0,0,-3" Height="40" VerticalAlignment="Bottom" Width="1277">
             <ProgressBar x:Name="main_pbar" Width="200" Height="20" Value="0"/>
@@ -68,7 +71,7 @@
         </ScrollViewer>
         <Label Content="サーバー選択：" Margin="10,139,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left"/>
         <ComboBox x:Name="server_list" Height="37" Margin="143,139,283,0" VerticalAlignment="Top" FontSize="18">
-            <ComboBoxItem IsEnabled="True">ServerList</ComboBoxItem>
+            <ComboBoxItem IsEnabled="False">ServerList</ComboBoxItem>
         </ComboBox>
         <Button Content="追加" Margin="0,139,136,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="126"/>
         <Button Content="削除" Margin="0,139,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="126"/>

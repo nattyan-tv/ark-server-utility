@@ -62,7 +62,7 @@ namespace ark_server_utility
             label_dir.Content = "ディレクトリ：" + arr[2];
             main_pbar.Value = 75;
             main_ptext.Content = "データを読み込みました。";
-            if (!File.Exists(@arr[2] + @"/ShooterGameServer.exe"))
+            if (!File.Exists(@arr[2] + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe"))
             {
                 start_server.IsEnabled = false;
                 install_server.Content = "インストール";
@@ -75,11 +75,19 @@ namespace ark_server_utility
             server_name.Text = arr[0];
             map.Text = arr[1];
             server_dir.Text = arr[2];
+            server_list.Items.Add(arr[0]);
             server_list.Text = arr[0];
             main_pbar.Value = 100;
             main_ptext.Content = "ARK: Server Utility";
         }
-
+        private void start_debug(object sender, RoutedEventArgs e)
+        {
+            ProcessStartInfo processStartInfo = new ProcessStartInfo(@"SteamCMD/" + @server_dir.Text + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe", map.Text + "?listen?SessionName=" + server_name.Text + "?ServerPassword=" + join_pass.Password + "?ServerAdminPassword=" + admin_pass.Password + "?Port=7777?QueryPort=27015?MaxPlayers=3");
+            Process ark_server = Process.Start(processStartInfo);
+            int exitCode = ark_server.ExitCode;
+            ark_server.Close();
+            
+        }
         private void exit_app(object sender, RoutedEventArgs e)
         {
             this.Close();
@@ -299,11 +307,10 @@ namespace ark_server_utility
                 main_pbar.Value = 75;
                 main_ptext.Content = "インストール処理中...";
                 /// SteamCMDよりARKをダウンロード
-                ProcessStartInfo processStartInfo = new ProcessStartInfo(@"SteamCMD\\steamcmd.exe", "+login anonymous +force_install_dir " + @arr[2] + " +app_update 376030 +quit");
+                ProcessStartInfo processStartInfo = new ProcessStartInfo(@"SteamCMD\\steamcmd.exe", "+login anonymous +force_install_dir " + @arr[2] + " +app_update 376030");
                 Process steamcmd_installer = Process.Start(processStartInfo);
-                steamcmd_installer.WaitForExit();
+
                 int exitCode = steamcmd_installer.ExitCode;
-                steamcmd_installer.Close();
                 Console.WriteLine(exitCode);
                 if (exitCode == 1)
                 {
