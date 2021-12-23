@@ -62,7 +62,7 @@ namespace ark_server_utility
             label_dir.Content = "ディレクトリ：" + arr[2];
             main_pbar.Value = 75;
             main_ptext.Content = "データを読み込みました。";
-            if (!File.Exists(@arr[2] + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe"))
+            if (!File.Exists(@"SteamCMD\\" + @arr[2] + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe"))
             {
                 start_server.IsEnabled = false;
                 install_server.Content = "インストール";
@@ -82,11 +82,8 @@ namespace ark_server_utility
         }
         private void start_debug(object sender, RoutedEventArgs e)
         {
-            ProcessStartInfo processStartInfo = new ProcessStartInfo(@"SteamCMD/" + @server_dir.Text + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe", map.Text + "?listen?SessionName=" + server_name.Text + "?ServerPassword=" + join_pass.Password + "?ServerAdminPassword=" + admin_pass.Password + "?Port=7777?QueryPort=27015?MaxPlayers=3");
-            Process ark_server = Process.Start(processStartInfo);
-            int exitCode = ark_server.ExitCode;
-            ark_server.Close();
-            
+            ProcessStartInfo processStartInfo = new ProcessStartInfo(@"SteamCMD\\" + @server_dir.Text + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe", map.Text + "?listen?SessionName=" + server_name.Text + "?ServerPassword=" + join_pass.Password + "?ServerAdminPassword=" + admin_pass.Password + "?Port=7777?QueryPort=27015?MaxPlayers=3");
+            Process.Start(processStartInfo);
         }
         private void exit_app(object sender, RoutedEventArgs e)
         {
