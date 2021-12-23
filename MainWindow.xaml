@@ -76,10 +76,13 @@
                     </GroupBox>
                 </Grid>
                 <GroupBox Header="システム設定" Height="217" Width="1243">
-                    <Grid>
-                        <!-- https://ark.fandom.com/ja/wiki/%E3%82%B5%E3%83%BC%E3%83%90%E3%83%BC%E6%A7%8B%E6%88%90 -->
-                        <CheckBox x:Name="allowansel" Content="NVIDIA Anselを有効にする"/>
-                    </Grid>
+                    <ListView d:ItemsSource="{d:SampleData ItemCount=6}">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
                 </GroupBox>
             </StackPanel>
         </ScrollViewer>
