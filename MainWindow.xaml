@@ -10,6 +10,7 @@
         <Grid.RowDefinitions>
             <RowDefinition/>
         </Grid.RowDefinitions>
+        <!-- 最上部メニュー -->
         <Menu VerticalAlignment="Top">
             <MenuItem Header="ファイル">
                 <MenuItem Header="終了" Click="exit_app"/>
@@ -23,57 +24,70 @@
                 <MenuItem Header="Start current server" Click="start_debug"/>
             </MenuItem>
         </Menu>
+        <!-- 上部ステータス -->
+        <Grid>
+            <Label x:Name="label_name" Content="サーバー名：Loading..." Margin="10,23,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left" Width="1003"/>
+            <Label x:Name="label_map" Content="マップ名：Loading..." Margin="10,60,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left" Width="1003"/>
+            <Label x:Name="label_dir" Content="ディレクトリ：Loading..." Margin="10,97,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left" Width="1003"/>
+            <Button x:Name="start_server" Content="サーバーの開始" Margin="0,23,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" IsEnabled="False"/>
+            <Button Content="設定の保存" Margin="0,60,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" Click="Button_Click"/>
+            <Button x:Name="install_server" Content="インストール" Margin="0,97,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" Click="install_server_Click"/>
+            <Label Content="サーバー選択：" Margin="10,139,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left"/>
+            <ComboBox x:Name="server_list" Height="37" Margin="143,139,283,0" VerticalAlignment="Top" FontSize="18">
+            </ComboBox>
+            <Button Content="追加" Margin="0,139,136,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="126"/>
+            <Button Content="削除" Margin="0,139,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="126"/>
+        </Grid>
+        <!-- メインエリア -->
+        <ScrollViewer Margin="0,181,0,37" FontSize="16">
+            <StackPanel Background="#FFE5E5E5">
+                <Grid>
+                    <GroupBox Header="メイン設定" Margin="10,0,10,0">
+                        <Grid>
+                            <Label Content="サーバー名：" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
+                            <TextBox x:Name="server_name" Margin="99,10,10,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="31" ToolTip="サーバーの名前"/>
+                            <CheckBox Content="サーバーにパスワードを付ける" HorizontalAlignment="Left" Margin="10,52,0,0" VerticalAlignment="Top" Click="CheckBox_Checked"/>
+                            <Grid Margin="10,77,0,0" Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Width="627">
+                                <Label Content="参加用パスワード：" Margin="0,0,0,3" HorizontalAlignment="Left" Width="133"/>
+                                <PasswordBox x:Name="join_pass" ToolTip="サーバーの名前" IsEnabled="False" Margin="133,1,10,2"/>
+                            </Grid>
+                            <Grid Margin="637,77,0,0" Height="34" VerticalAlignment="Top">
+                                <Label Content="管理用パスワード：" Margin="0,0,0,3" HorizontalAlignment="Left" Width="133"/>
+                                <PasswordBox x:Name="admin_pass" ToolTip="サーバーの名前" Margin="133,1,10,2"/>
+                            </Grid>
+                            <ComboBox x:Name="map" Height="31" Margin="92,116,10,0" VerticalAlignment="Top" FontSize="18">
+                                <ComboBoxItem>TheIsland</ComboBoxItem>
+                                <ComboBoxItem>TheCenter</ComboBoxItem>
+                                <ComboBoxItem>ScorchedEarth_P</ComboBoxItem>
+                                <ComboBoxItem>Ragnarok</ComboBoxItem>
+                                <ComboBoxItem>Aberration_P</ComboBoxItem>
+                                <ComboBoxItem>Extinction</ComboBoxItem>
+                                <ComboBoxItem>Valguero_P</ComboBoxItem>
+                                <ComboBoxItem>Genesis</ComboBoxItem>
+                                <ComboBoxItem>CrystalIsles</ComboBoxItem>
+                                <ComboBoxItem>Gen2</ComboBoxItem>
+                                <ComboBoxItem>LostIsland</ComboBoxItem>
+                            </ComboBox>
+                            <Label Content="マップ名：" HorizontalAlignment="Left" Margin="10,116,0,0" VerticalAlignment="Top"/>
+                            <Label Content="ディレクトリ：" HorizontalAlignment="Left" Margin="10,155,0,0" VerticalAlignment="Top"/>
+                            <TextBox x:Name="server_dir" Margin="104,155,145,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="31" ToolTip="サーバーの名前"/>
+                            <Button x:Name="install_dir_bt" Content="参照" Margin="0,152,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="130" Click="install_dir_bt_Click"/>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+                <GroupBox Header="システム設定" Height="217" Width="1243">
+                    <Grid>
+                        <!-- https://ark.fandom.com/ja/wiki/%E3%82%B5%E3%83%BC%E3%83%90%E3%83%BC%E6%A7%8B%E6%88%90 -->
+                        <CheckBox x:Name="allowansel" Content="NVIDIA Anselを有効にする"/>
+                    </Grid>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+        <!-- 下のステータスバー -->
         <StatusBar Margin="0,0,0,-3" Height="40" VerticalAlignment="Bottom" Width="1277">
             <ProgressBar x:Name="main_pbar" Width="200" Height="20" Value="0"/>
             <Separator/>
             <Label x:Name="main_ptext" Content="ARK Server Utility起動中..."/>
         </StatusBar>
-        <Label x:Name="label_name" Content="サーバー名：Loading..." Margin="10,23,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left" Width="1003"/>
-        <Label x:Name="label_map" Content="マップ名：Loading..." Margin="10,60,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left" Width="1003"/>
-        <Label x:Name="label_dir" Content="ディレクトリ：Loading..." Margin="10,97,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left" Width="1003"/>
-        <Button x:Name="start_server" Content="サーバーの開始" Margin="0,23,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" IsEnabled="False"/>
-        <Button Content="設定の保存" Margin="0,60,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" Click="Button_Click"/>
-        <Button x:Name="install_server" Content="インストール" Margin="0,97,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" Click="install_server_Click"/>
-        <ScrollViewer Margin="0,181,0,37" FontSize="16">
-            <StackPanel Background="#FFE5E5E5">
-
-                <Grid>
-                    <Label Content="サーバー名：" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-                    <TextBox x:Name="server_name" Margin="99,10,10,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="31" ToolTip="サーバーの名前"/>
-                    <CheckBox Content="サーバーにパスワードを付ける" HorizontalAlignment="Left" Margin="10,52,0,0" VerticalAlignment="Top" Click="CheckBox_Checked"/>
-                    <Grid Margin="10,77,0,0" Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Width="627">
-                        <Label Content="参加用パスワード：" Margin="0,0,0,3" HorizontalAlignment="Left" Width="133"/>
-                        <PasswordBox x:Name="join_pass" ToolTip="サーバーの名前" IsEnabled="False" Margin="133,1,10,2"/>
-                    </Grid>
-                    <Grid Margin="637,77,0,0" Height="34" VerticalAlignment="Top">
-                        <Label Content="管理用パスワード：" Margin="0,0,0,3" HorizontalAlignment="Left" Width="133"/>
-                        <PasswordBox x:Name="admin_pass" ToolTip="サーバーの名前" Margin="133,1,10,2"/>
-                    </Grid>
-                    <ComboBox x:Name="map" Height="31" Margin="92,116,10,0" VerticalAlignment="Top" FontSize="18">
-                        <ComboBoxItem>TheIsland</ComboBoxItem>
-                        <ComboBoxItem>TheCenter</ComboBoxItem>
-                        <ComboBoxItem>ScorchedEarth_P</ComboBoxItem>
-                        <ComboBoxItem>Ragnarok</ComboBoxItem>
-                        <ComboBoxItem>Aberration_P</ComboBoxItem>
-                        <ComboBoxItem>Extinction</ComboBoxItem>
-                        <ComboBoxItem>Valguero_P</ComboBoxItem>
-                        <ComboBoxItem>Genesis</ComboBoxItem>
-                        <ComboBoxItem>CrystalIsles</ComboBoxItem>
-                        <ComboBoxItem>Gen2</ComboBoxItem>
-                        <ComboBoxItem>LostIsland</ComboBoxItem>
-                    </ComboBox>
-                    <Label Content="マップ名：" HorizontalAlignment="Left" Margin="10,116,0,0" VerticalAlignment="Top"/>
-                    <Label Content="ディレクトリ：" HorizontalAlignment="Left" Margin="10,152,0,0" VerticalAlignment="Top"/>
-                    <TextBox x:Name="server_dir" Margin="105,152,10,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="31" ToolTip="サーバーの名前"/>
-
-                </Grid>
-            </StackPanel>
-        </ScrollViewer>
-        <Label Content="サーバー選択：" Margin="10,139,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left"/>
-        <ComboBox x:Name="server_list" Height="37" Margin="143,139,283,0" VerticalAlignment="Top" FontSize="18">
-            <ComboBoxItem IsEnabled="False">ServerList</ComboBoxItem>
-        </ComboBox>
-        <Button Content="追加" Margin="0,139,136,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="126"/>
-        <Button Content="削除" Margin="0,139,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="126"/>
     </Grid>
 </Window>
