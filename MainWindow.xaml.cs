@@ -39,7 +39,7 @@ namespace ark_server_utility
                 myProcess.Close();
                 main_pbar.Value = 50;
                 main_ptext.Content = "設定ファイルを作成しました。";
-                /// string[,] settings_data = new string[99, 3];
+                // string[,] settings_data = new string[99, 3];
             }
             string read_set = "python/settings.py";
             var read_pro = new Process
@@ -63,15 +63,85 @@ namespace ark_server_utility
             label_dir.Content = "ディレクトリ：" + arr[2];
             main_pbar.Value = 75;
             main_ptext.Content = "データを読み込みました。";
+            var value_pro = new Process
+            {
+                StartInfo = new ProcessStartInfo("python")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    Arguments = "python/settings.py value",
+                    CreateNoWindow = true
+                }
+            };
+            value_pro.Start();
+            StreamReader val_read = value_pro.StandardOutput;
+            string value = val_read.ReadLine();
+            value_pro.WaitForExit();
+            value_pro.Close();
+            if (value == "1")
+            {
+                del_list.IsEnabled = false;
+            }
             if (!File.Exists(@arr[2] + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe"))
             {
+                // サーバーデータがインストールされていない場合の処理
                 start_server.IsEnabled = false;
                 install_server.Content = "インストール";
+                var version_pro = new Process
+                {
+                    StartInfo = new ProcessStartInfo("python")
+                    {
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        Arguments = "python/version.py version 0",
+                        CreateNoWindow = true
+                    }
+                };
+                version_pro.Start();
+                StreamReader ver_read = version_pro.StandardOutput;
+                string version = ver_read.ReadLine();
+                version_pro.WaitForExit();
+                version_pro.Close();
+                latest_version.Content = "配信されている最新バージョン：" + version;
             }
             else
             {
+                // サーバーデータがインストールされている場合の処理
                 start_server.IsEnabled = true;
                 install_server.Content = "アンインストール";
+                var version_pro = new Process
+                {
+                    StartInfo = new ProcessStartInfo("python")
+                    {
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        Arguments = "python/webapi.py version 1",
+                        CreateNoWindow = true
+                    }
+                };
+                version_pro.Start();
+                StreamReader ver_read = version_pro.StandardOutput;
+                string version = ver_read.ReadLine();
+                Console.WriteLine(version);
+                version_pro.WaitForExit();
+                version_pro.Close();
+                string[] vers = version.Split(',');
+                latest_version.Content = "配信されている最新バージョン：" + vers[0];
+                current_version.Content = "インストールされているバージョン：" + vers[1];
+                update_bt.IsEnabled = true;
+
+                if(float.Parse(vers[0]) > float.Parse(vers[1]))
+                {
+                    update_bt.Content = "アップデート";
+                }
+                else
+                {
+                    update_bt.Content = "ファイルのチェック";
+                }
+                server_pass_bool.IsEnabled = true;
+                admin_pass.IsEnabled = true;
+                game_port.IsEnabled = true;
+                query_port.IsEnabled = true;
             }
             server_name.Text = arr[0];
             map.Text = arr[1];
@@ -347,6 +417,81 @@ namespace ark_server_utility
                 }
                 server_dir.Text = cofd.FileName;
             }
+        }
+
+        private void add_list_bt(object sender, RoutedEventArgs e)
+        {
+            var value_pro = new Process
+            {
+                StartInfo = new ProcessStartInfo("python")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    Arguments = "python/settings.py value",
+                    CreateNoWindow = true
+                }
+            };
+            value_pro.Start();
+            StreamReader val_read = value_pro.StandardOutput;
+            string value = val_read.ReadLine();
+            value_pro.WaitForExit();
+            value_pro.Close();
+            int new_value = int.Parse(value);
+            new_value++;
+            server_list.Items.Add("server" + new_value);
+            server_list.Text = "server" + new_value;
+            server_name.Text = "server" + new_value;
+            label_name.Content = "サーバー名：server" + new_value;
+            map.Text = "TheIsland";
+            label_map.Content = "マップ名：TheIsland";
+            server_dir.Text = "C:\\";
+            label_dir.Content = "ディレクトリ：C:\\";
+            game_port.IsEnabled = false;
+            query_port.IsEnabled = false;
+            server_pass_bool.IsEnabled = false;
+            admin_pass.IsEnabled = false;
+            var list_pro = new Process
+            {
+                StartInfo = new ProcessStartInfo("python")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    Arguments = "python/settings.py write server" + new_value + " TheIsland C:\\",
+                    CreateNoWindow = true
+                }
+            };
+            list_pro.Start();
+            list_pro.WaitForExit();
+            list_pro.Close();
+        }
+
+        private void list_changed(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            string server = server_list.Text;
+            int index = server_list.Items.IndexOf(server);
+            var list_pro = new Process
+            {
+                StartInfo = new ProcessStartInfo("python")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    Arguments = "python/settings.py read " + index,
+                    CreateNoWindow = true
+                }
+            };
+            list_pro.Start();
+            StreamReader list_read = list_pro.StandardOutput;
+            string list_string = list_read.ReadLine();
+            Console.WriteLine(list_string);
+            list_pro.WaitForExit();
+            list_pro.Close();
+            string[] arr = list_string.Split(',');
+            server_name.Text = arr[0];
+            label_name.Content = "サーバー名：" + arr[0];
+            map.Text = arr[1];
+            label_map.Content = "マップ名：" + arr[1];
+            server_dir.Text = arr[2];
+            label_dir.Content = "ディレクトリ：" + arr[2];
         }
     }
 

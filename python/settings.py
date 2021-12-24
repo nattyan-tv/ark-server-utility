@@ -15,6 +15,13 @@ def main():
         with open("settings.json", mode='w', encoding="utf-8") as f:
             json.dump(first_setting, f, ensure_ascii=False, indent=4)
         # print(f'{first_setting["1"]["name"]},{first_setting["1"]["map"]},{first_setting["1"]["dir"]}')
+        return
+    
+    if arg[1] == "value":
+        with open("settings.json", mode="r", encoding="utf-8") as f:
+            settings = json.load(f)
+        print(settings["value"])
+        return
 
     ## CODE：python -m settings.py read [NUM]
     ## EXEC：設定ファイルからNUM番目のサーバーの情報を返す

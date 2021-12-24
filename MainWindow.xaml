@@ -26,34 +26,51 @@
         </Menu>
         <!-- 上部ステータス -->
         <Grid>
-            <Label x:Name="label_name" Content="サーバー名：Loading..." Margin="10,23,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left" Width="1003"/>
-            <Label x:Name="label_map" Content="マップ名：Loading..." Margin="10,60,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left" Width="1003"/>
-            <Label x:Name="label_dir" Content="ディレクトリ：Loading..." Margin="10,97,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left" Width="1003"/>
+            <Label x:Name="label_name" Content="サーバー名：Loading..." Margin="10,23,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left" Width="730"/>
+            <Label x:Name="label_map" Content="マップ名：Loading..." Margin="10,60,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left" Width="730"/>
+            <Label x:Name="label_dir" Content="ディレクトリ：Loading..." Margin="10,97,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left" Width="730"/>
             <Button x:Name="start_server" Content="サーバーの開始" Margin="0,23,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" IsEnabled="False"/>
             <Button Content="設定の保存" Margin="0,60,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" Click="Button_Click"/>
             <Button x:Name="install_server" Content="インストール" Margin="0,97,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" Click="install_server_Click"/>
             <Label Content="サーバー選択：" Margin="10,139,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left"/>
-            <ComboBox x:Name="server_list" Height="37" Margin="143,139,283,0" VerticalAlignment="Top" FontSize="18">
+            <ComboBox x:Name="server_list" Height="37" Margin="143,139,283,0" VerticalAlignment="Top" FontSize="18" IsEnabledChanged="list_changed">
             </ComboBox>
-            <Button Content="追加" Margin="0,139,136,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="126"/>
-            <Button Content="削除" Margin="0,139,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="126"/>
+            <Grid>
+                <GroupBox Header="バージョン" Margin="756,23,284,0" Height="111" VerticalAlignment="Top">
+                    <Grid Margin="2,0,2,0">
+                        <Label x:Name="latest_version" Content="配信されている最新バージョン：XXX.XX" Margin="0,0,5,62"/>
+                        <Label x:Name="current_version" Content="インストールされているバージョン：XXX.XX" Margin="0,31,0,31"/>
+                        <Button IsEnabled="False" x:Name="update_bt" Content="情報取得中..." Margin="0,62,0,0"/>
+                    </Grid>
+                </GroupBox>
+            </Grid>
+            <Button x:Name="add_list" Content="追加" Margin="0,139,136,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="126" Click="add_list_bt"/>
+            <Button x:Name="del_list" Content="削除" Margin="0,139,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="126"/>
         </Grid>
         <!-- メインエリア -->
         <ScrollViewer Margin="0,181,0,37" FontSize="16">
             <StackPanel Background="#FFE5E5E5">
                 <Grid>
-                    <GroupBox Header="メイン設定" Margin="10,0,10,0">
+                    <GroupBox Header="メイン設定" Margin="10,0,10,91">
                         <Grid>
                             <Label Content="サーバー名：" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
                             <TextBox x:Name="server_name" Margin="99,10,10,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="31" ToolTip="サーバーの名前"/>
-                            <CheckBox Content="サーバーにパスワードを付ける" HorizontalAlignment="Left" Margin="10,52,0,0" VerticalAlignment="Top" Click="CheckBox_Checked"/>
+                            <CheckBox x:Name="server_pass_bool" Content="サーバーにパスワードを付ける" HorizontalAlignment="Left" Margin="10,52,0,0" VerticalAlignment="Top" Click="CheckBox_Checked" IsEnabled="False"/>
                             <Grid Margin="10,77,0,0" Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Width="627">
                                 <Label Content="参加用パスワード：" Margin="0,0,0,3" HorizontalAlignment="Left" Width="133"/>
                                 <PasswordBox x:Name="join_pass" ToolTip="サーバーの名前" IsEnabled="False" Margin="133,1,10,2"/>
                             </Grid>
                             <Grid Margin="637,77,0,0" Height="34" VerticalAlignment="Top">
                                 <Label Content="管理用パスワード：" Margin="0,0,0,3" HorizontalAlignment="Left" Width="133"/>
-                                <PasswordBox x:Name="admin_pass" ToolTip="サーバーの名前" Margin="133,1,10,2"/>
+                                <PasswordBox x:Name="admin_pass" ToolTip="管理用のパスワード" Margin="133,1,10,2" IsEnabled="False"/>
+                            </Grid>
+                            <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10,191,0,0" Width="220">
+                                <Label Content="ゲームポート：" Margin="0,2,0,2" HorizontalAlignment="Left" Width="96"/>
+                                <PasswordBox x:Name="game_port" ToolTip="ゲームポート" Margin="101,2,10,2" IsEnabled="False"/>
+                            </Grid>
+                            <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="235,191,0,0" Width="230">
+                                <Label Content="クエリーポート：" Margin="0,2,0,2" HorizontalAlignment="Left"/>
+                                <PasswordBox x:Name="query_port" ToolTip="クエリーポート" Margin="111,2,0,2" IsEnabled="False"/>
                             </Grid>
                             <ComboBox x:Name="map" Height="31" Margin="92,116,10,0" VerticalAlignment="Top" FontSize="18">
                                 <ComboBoxItem>TheIsland</ComboBoxItem>
@@ -72,14 +89,17 @@
                             <Label Content="ディレクトリ：" HorizontalAlignment="Left" Margin="10,155,0,0" VerticalAlignment="Top"/>
                             <TextBox x:Name="server_dir" Margin="104,155,145,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="31" ToolTip="サーバーの名前"/>
                             <Button x:Name="install_dir_bt" Content="参照" Margin="0,152,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="130" Click="install_dir_bt_Click"/>
+
                         </Grid>
                     </GroupBox>
                 </Grid>
                 <GroupBox Header="システム設定" Height="217" Width="1243">
-                    <ListView d:ItemsSource="{d:SampleData ItemCount=6}">
+                    <ListView >
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn/>
+                                <GridViewColumn Header="名称"/>
+                                <GridViewColumn Header="詳細"/>
+                                <GridViewColumn Header="設定"/>
                             </GridView>
                         </ListView.View>
                     </ListView>
