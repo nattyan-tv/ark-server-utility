@@ -1,5 +1,8 @@
 # ARK: Server Utility
-ARK: Survival Evolved's dedicated server' utility application.
+ARK: Survival Evolved's dedicated server' utility application.  
+
+# README
+### [日本語](https://github.com/nattyan-tv/ark-server-utility/README_JA.md)/[English](https://github.com/nattyan-tv/ark-server-utility/README.md)
 
 # Detail
 This is a software for setting up a dedicated server for ARK: Survial Evolved.  
