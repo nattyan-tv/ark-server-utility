@@ -7,12 +7,14 @@ main_url = "http://arkdedicated.com/"
 def main():
     arg = sys.argv
 
+    # 最新バージョンを取得
     if arg[1] == "version" and arg[2] == "0":
         url = main_url + "version"
         req = requests.get(url)
         version = req.json()
         print(version)
 
+    # 最新バージョンと現行バージョンを取得
     if arg[1] == "version" and arg[2] == "1":
         url = main_url + "version"
         req = requests.get(url)
