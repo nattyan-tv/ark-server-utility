@@ -1,6 +1,10 @@
 # ARK: Server Utility
 ARK: Survival Evolved's dedicated server' utility application. (飽きたら開発止めます)
 
+# README
+### [日本語](https://github.com/nattyan-tv/ark-server-utility/README_JA.md)/[English](https://github.com/nattyan-tv/ark-server-utility/README.md)
+
+
 # Detail
 ARK: Survival Evolvedの非公式サーバーを立てるソフトです。  
 他に似たようなソフトがありますが関係ないです(ってかそっちの方が多分有能です)
