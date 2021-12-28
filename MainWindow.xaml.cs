@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 using System.Text.Json;
+using System.Collections.Generic;
 using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace ark_server_utility
@@ -16,11 +17,23 @@ namespace ark_server_utility
     /// </summary>
     public partial class MainWindow : Window
     {
+        private List<arg_data> args = new List<arg_data>();
         public MainWindow()
         {
             InitializeComponent();
-            main_pbar.Value = 25;
-            main_ptext.Content = "設定ファイル読み込み中...";
+            var dict = new Dictionary<string, string>();
+        
+            // 起動オプションの引数をぉおお！！！ここにぃいいい！！！つっこむうぅうう！！！ぜんぶうぅうううう！！（地獄）
+            dict.Add("key1", "value1");
+            dict.Add("key2", "value2");
+            dict.Add("key3", "value3");
+            
+            foreach (KeyValuePair<string, string> kvp in dict)
+            {
+                args.Add(new arg_data { arg = kvp.Key, detail = kvp.Value });
+            }
+
+            arg_setting.ItemsSource = args;
             if (!File.Exists(@"settings.json"))
             {
                 string myPythonApp = "python/settings.py";
@@ -37,8 +50,6 @@ namespace ark_server_utility
                 myProcess.Start();
                 myProcess.WaitForExit();
                 myProcess.Close();
-                main_pbar.Value = 50;
-                main_ptext.Content = "設定ファイルを作成しました。";
                 // string[,] settings_data = new string[99, 3];
             }
             string read_set = "python/settings.py";
@@ -61,8 +72,6 @@ namespace ark_server_utility
             label_name.Content = "サーバー名：" + arr[0];
             label_map.Content = "マップ名：" + arr[1];
             label_dir.Content = "ディレクトリ：" + arr[2];
-            main_pbar.Value = 75;
-            main_ptext.Content = "データを読み込みました。";
             var value_pro = new Process
             {
                 StartInfo = new ProcessStartInfo("python")
@@ -142,6 +151,7 @@ namespace ark_server_utility
                 admin_pass.IsEnabled = true;
                 game_port.IsEnabled = true;
                 query_port.IsEnabled = true;
+                arg_setting_box.IsEnabled = true;
             }
             server_name.Text = arr[0];
             map.Text = arr[1];
@@ -492,6 +502,18 @@ namespace ark_server_utility
             label_map.Content = "マップ名：" + arr[1];
             server_dir.Text = arr[2];
             label_dir.Content = "ディレクトリ：" + arr[2];
+        }
+
+        private void arg_setting_change(object sender, RoutedEventArgs e)
+        {
+            ;
+        }
+        private void arg_list_changed(object sender, RoutedEventArgs e)
+        {
+            if (arg_setting.SelectedItem == null) return;
+            arg_data item = (arg_data)arg_setting.SelectedItem;
+            arg_arg.Content = item.arg;
+            arg_detail.Content = item.detail;
         }
     }
 
