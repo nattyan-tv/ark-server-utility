@@ -2,7 +2,7 @@
 ARK: Survival Evolved's dedicated server' utility application. (飽きたら開発止めます)
 
 # README
-### [日本語](https://github.com/nattyan-tv/ark-server-utility/README_JA.md)/[English](https://github.com/nattyan-tv/ark-server-utility/README.md)
+### [日本語](https://github.com/nattyan-tv/ark-server-utility/blob/master/README_JA.md)/[English](https://github.com/nattyan-tv/ark-server-utility/blob/master/README.md)
 
 
 # Detail
