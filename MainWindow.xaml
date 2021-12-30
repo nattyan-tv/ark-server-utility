@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ark_server_utility"
         mc:Ignorable="d"
-        Title="ARK Server Utility" Height="1032" Width="1472" WindowStartupLocation="Manual" WindowState="Normal" MinWidth="600" MinHeight="400">
+        Title="ARK Server Utility" Height="720" Width="1280" WindowStartupLocation="Manual" WindowState="Normal" MinWidth="600" MinHeight="400">
     <Grid Name="Grid1">
         <Grid.RowDefinitions>
             <RowDefinition/>
@@ -108,9 +108,9 @@
                             </Grid>
                             <Grid HorizontalAlignment="Right" Width="295">
                                 <Label Content="・引数" Height="30" Margin="0,0,0,370"/>
-                                <Label x:Name="arg_arg" Content="（選択してください）" Height="60" Margin="0,35,0,305"/>
+                                <TextBox FontSize="14" x:Name="arg_arg" Width="295" Height="60" Margin="0,35,0,305" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Visible"/>
                                 <Label Content="・説明" Height="30" Margin="0,100,0,270"/>
-                                <Label x:Name="arg_detail" Content="（選択してください）" Height="120" Margin="0,135,0,145"/>
+                                <TextBox FontSize="14" x:Name="arg_detail" Width="295" Height="120" Margin="0,135,0,145" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Visible"/>
                                 <Label Content="・値" Height="30" Margin="0,260,0,110" HorizontalAlignment="Right" Width="294"/>
                                 <TextBox Height="30" Margin="0,295,0,75"/>
                                 <Button Margin="0,357,0,0" Content="更新" Click="arg_setting_change" />
