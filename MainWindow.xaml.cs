@@ -7,8 +7,13 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 using System.Text.Json;
+using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Microsoft.WindowsAPICodePack.Dialogs;
+using System.Text;
+using System.Net.Sockets;
+using System.Management;
+
 
 namespace ark_server_utility
 {
@@ -147,6 +152,17 @@ namespace ark_server_utility
                 query_port.IsEnabled = true;
                 arg_setting_box.IsEnabled = true;
             }
+            var ipc_main = new Process
+            {
+                StartInfo = new ProcessStartInfo("python")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    Arguments = "python/ipc_main.py",
+                    CreateNoWindow = true
+                }
+            };
+            ipc_main.Start();
             server_name.Text = arr[0];
             map.Text = arr[1];
             server_dir.Text = arr[2];
@@ -508,6 +524,55 @@ namespace ark_server_utility
             arg_data item = (arg_data)arg_setting.SelectedItem;
             arg_arg.Text = item.arg;
             arg_detail.Text = item.detail;
+        }
+
+        private void send_pro(object sender, EventArgs e)
+        {
+
+            /// TESTだよ
+            // ソケット生成
+            using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+                {
+                    // Connect関数でローカル(127.0.0.1)のポート番号9999で待機するソケットに接続する。
+                    client.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 7891));
+                    // 送るメッセージをUTF8タイプのbyte配列で変換する。
+                    var data = Encoding.UTF8.GetBytes("this message is sent from C# client.");
+
+                    // 転送するデータの長さをbigエンディアンで変換してサーバで送る。(4byte)
+                    client.Send(BitConverter.GetBytes(data.Length));
+                    // データを転送する。
+                    client.Send(data);
+
+                    // データの長さを受信するための配列を生成する。(4byte)	
+                    data = new byte[4];
+                    // データの長さを受信する。
+                    client.Receive(data, data.Length, SocketFlags.None);
+                    // serverでbigエンディアンを転送してもlittleエンディアンで受信される。bigエンディアンとlittleエンディアンは配列の順番が逆なのでreverseする。
+                    Array.Reverse(data);
+                    // データ長さでbyte配列を生成する。
+                    data = new byte[BitConverter.ToInt32(data, 0)];
+                    // データを受信する。
+                    client.Receive(data, data.Length, SocketFlags.None);
+                    // 受信したデータをUTF8エンコードでstringタイプに変換してコンソールに出力する。
+                    Console.WriteLine(Encoding.UTF8.GetString(data));
+                this.Title = Encoding.UTF8.GetString(data);
+                }
+
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            var kill_ipc = new Process
+            {
+                StartInfo = new ProcessStartInfo("python")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    Arguments = "python/kill_ipc.py",
+                    CreateNoWindow = true
+                }
+            };
+            kill_ipc.Start();
         }
     }
 
