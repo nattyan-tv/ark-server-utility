@@ -162,7 +162,7 @@ namespace ark_server_utility
                     CreateNoWindow = true
                 }
             };
-            ipc_main.Start();
+            // ipc_main.Start();
             server_name.Text = arr[0];
             map.Text = arr[1];
             server_dir.Text = arr[2];
@@ -536,7 +536,7 @@ namespace ark_server_utility
                     // Connect関数でローカル(127.0.0.1)のポート番号9999で待機するソケットに接続する。
                     client.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 7891));
                     // 送るメッセージをUTF8タイプのbyte配列で変換する。
-                    var data = Encoding.UTF8.GetBytes("this message is sent from C# client.");
+                    var data = Encoding.UTF8.GetBytes(server_name.Text);
 
                     // 転送するデータの長さをbigエンディアンで変換してサーバで送る。(4byte)
                     client.Send(BitConverter.GetBytes(data.Length));
@@ -562,17 +562,18 @@ namespace ark_server_utility
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            var kill_ipc = new Process
+            using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
             {
-                StartInfo = new ProcessStartInfo("python")
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    Arguments = "python/kill_ipc.py",
-                    CreateNoWindow = true
-                }
-            };
-            kill_ipc.Start();
+                // Connect関数でローカル(127.0.0.1)のポート番号9999で待機するソケットに接続する。
+                client.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 7891));
+                // 送るメッセージをUTF8タイプのbyte配列で変換する。
+                var data = Encoding.UTF8.GetBytes("exit");
+
+                // 転送するデータの長さをbigエンディアンで変換してサーバで送る。(4byte)
+                client.Send(BitConverter.GetBytes(data.Length));
+                // データを転送する。
+                client.Send(data);
+            }
         }
     }
 

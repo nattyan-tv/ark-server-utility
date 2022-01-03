@@ -1,6 +1,8 @@
 # ソケットを使うためにsocketモジュールをimportする。
-import socket, threading
- 
+import socket, threading, sys, os
+import psutil
+
+print(os.getpid())
 # binder関数はサーバーからacceptしたら生成されるsocketインスタンスを通ってclientからデータを受信するとecho形で再送信するメソッドだ。
 def binder(client_socket, addr):
   try:
@@ -17,10 +19,12 @@ def binder(client_socket, addr):
       # 受信されたデータをstr形式でdecodeする。
       msg = data.decode()
       # 受信されたメッセージをコンソールに出力する。
-      if msg == "":
-        pass
-      else:
-        print(msg)
+      if msg == "exit":
+        for p in psutil.process_iter(attrs=('name', 'pid', 'cmdline')):
+          if p.info["pid"] == os.getpid():
+            p.terminate()
+      print(f"[{msg}]")
+
  
       # バイナリ(byte)タイプに変換する。
       data = msg.encode()
