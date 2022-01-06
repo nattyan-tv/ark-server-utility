@@ -54,16 +54,16 @@ namespace ark_server_utility
         }
         public MainWindow()
         {
-            var first_run = new System.Diagnostics.Process();
-            first_run.StartInfo.FileName = @"python/settings.exe";
-            first_run.StartInfo.Arguments = "first";
-            first_run.StartInfo.UseShellExecute = false;
-            first_run.StartInfo.CreateNoWindow = true;
-            first_run.StartInfo.RedirectStandardOutput = true;
-            first_run.Start();
-            first_run.WaitForExit();
-            first_run.Close();
-            return;
+            // var first_run = new System.Diagnostics.Process();
+            // first_run.StartInfo.FileName = @"python.exe";
+            // first_run.StartInfo.Arguments = "python/settings.py first";
+            // first_run.StartInfo.UseShellExecute = false;
+            // first_run.StartInfo.CreateNoWindow = true;
+            // first_run.StartInfo.RedirectStandardOutput = true;
+            // first_run.Start();
+            // first_run.WaitForExit();
+            // first_run.Close();
+            // return;
             InitializeComponent();
             var dict = new Dictionary<string, List<string>>();
 
@@ -77,7 +77,7 @@ namespace ark_server_utility
                 Console.WriteLine(File.Exists(@"settings.json"));
                 var myProcess = new Process
                 {
-                    StartInfo = new ProcessStartInfo("python")
+                    StartInfo = new ProcessStartInfo("python.exe")
                     {
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
@@ -93,7 +93,7 @@ namespace ark_server_utility
             }
             var read_pro = new Process
             {
-                StartInfo = new ProcessStartInfo("python")
+                StartInfo = new ProcessStartInfo("python.exe")
                 {
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
