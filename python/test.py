@@ -1,9 +1,9 @@
-import sys
+import subprocess, os, shutil
 
-while True:
-    cmd = input("CMD>")
-    
-    if cmd == "exit":
-        sys.exit()
-    else:
-        print(cmd)
+files = len(os.listdir("python"))
+for i in range(files):
+    if files[i][-3:] != ".py":
+        continue
+    subprocess.run(["pyinstaller", f"python/{files[i]}"])
+
+shutil.copytree("python/dist", "bin/Debug/python")

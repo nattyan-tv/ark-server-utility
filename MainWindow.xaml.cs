@@ -23,8 +23,47 @@ namespace ark_server_utility
     public partial class MainWindow : Window
     {
         private List<arg_data> args = new List<arg_data>();
+        public int port;
+        public string IpcConnect(int port, string text)
+        {
+            using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+            {
+                client.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), port));
+                var data = Encoding.UTF8.GetBytes(text);
+                client.Send(BitConverter.GetBytes(data.Length));
+                client.Send(data);
+                data = new byte[4];
+                client.Receive(data, data.Length, SocketFlags.None);
+                Array.Reverse(data);
+                data = new byte[BitConverter.ToInt32(data, 0)];
+                client.Receive(data, data.Length, SocketFlags.None);
+                return Encoding.UTF8.GetString(data);
+            }
+
+        }
+        public void IpcSend(int port, string text)
+        {
+            using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+            {
+                client.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), port));
+                var data = Encoding.UTF8.GetBytes(text);
+                client.Send(BitConverter.GetBytes(data.Length));
+                client.Send(data);
+                return;
+            }
+        }
         public MainWindow()
         {
+            var first_run = new System.Diagnostics.Process();
+            first_run.StartInfo.FileName = @"python/settings.exe";
+            first_run.StartInfo.Arguments = "first";
+            first_run.StartInfo.UseShellExecute = false;
+            first_run.StartInfo.CreateNoWindow = true;
+            first_run.StartInfo.RedirectStandardOutput = true;
+            first_run.Start();
+            first_run.WaitForExit();
+            first_run.Close();
+            return;
             InitializeComponent();
             var dict = new Dictionary<string, List<string>>();
 
@@ -32,33 +71,33 @@ namespace ark_server_utility
 
             // dict.Add("allowansel", new List<string>(){"さけ","サバ","はまち"});
             arg_setting.Items.Add(new arg_data { arg = "aaaa", detail = "bbb"});
-
+            Console.WriteLine(File.Exists(@"settings.json"));
             if (!File.Exists(@"settings.json"))
             {
-                string myPythonApp = "python/settings.py";
+                Console.WriteLine(File.Exists(@"settings.json"));
                 var myProcess = new Process
                 {
                     StartInfo = new ProcessStartInfo("python")
                     {
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
-                        Arguments = myPythonApp + " first",
+                        Arguments = "python/settings.py first",
                         CreateNoWindow = true
                     }
                 };
                 myProcess.Start();
                 myProcess.WaitForExit();
                 myProcess.Close();
+                Console.WriteLine(File.Exists(@"settings.json"));
                 // string[,] settings_data = new string[99, 3];
             }
-            string read_set = "python/settings.py";
             var read_pro = new Process
             {
                 StartInfo = new ProcessStartInfo("python")
                 {
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
-                    Arguments = read_set + " read 1",
+                    Arguments = "python/settings.py read 1",
                     CreateNoWindow = true
                 }
             };
@@ -152,17 +191,33 @@ namespace ark_server_utility
                 query_port.IsEnabled = true;
                 arg_setting_box.IsEnabled = true;
             }
+            var ipc_port = new Process
+            {
+                StartInfo = new ProcessStartInfo("python")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    Arguments = "python/search_port.py",
+                    CreateNoWindow = true
+                }
+            };
+            ipc_port.Start();
+            StreamReader port_num = ipc_port.StandardOutput;
+            port = int.Parse(port_num.ReadLine());
+            ipc_port.WaitForExit();
+            ipc_port.Close();
             var ipc_main = new Process
             {
                 StartInfo = new ProcessStartInfo("python")
                 {
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
-                    Arguments = "python/ipc_main.py",
+                    Arguments = "python/ipc_main.py" + port,
                     CreateNoWindow = true
                 }
             };
-            // ipc_main.Start();
+            ipc_main.Start();
+
             server_name.Text = arr[0];
             map.Text = arr[1];
             server_dir.Text = arr[2];
@@ -199,7 +254,6 @@ namespace ark_server_utility
                 return;
             }
             WebClient mywebClient = new WebClient();
-            mywebClient.DownloadFile("https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip", @"SteamCMD\\steamcmd.zip");
             try
             {
                 ZipFile.ExtractToDirectory(@"SteamCMD\\steamcmd.zip", @"SteamCMD");
@@ -528,52 +582,12 @@ namespace ark_server_utility
 
         private void send_pro(object sender, EventArgs e)
         {
-
-            /// TESTだよ
-            // ソケット生成
-            using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
-                {
-                    // Connect関数でローカル(127.0.0.1)のポート番号9999で待機するソケットに接続する。
-                    client.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 7891));
-                    // 送るメッセージをUTF8タイプのbyte配列で変換する。
-                    var data = Encoding.UTF8.GetBytes(server_name.Text);
-
-                    // 転送するデータの長さをbigエンディアンで変換してサーバで送る。(4byte)
-                    client.Send(BitConverter.GetBytes(data.Length));
-                    // データを転送する。
-                    client.Send(data);
-
-                    // データの長さを受信するための配列を生成する。(4byte)	
-                    data = new byte[4];
-                    // データの長さを受信する。
-                    client.Receive(data, data.Length, SocketFlags.None);
-                    // serverでbigエンディアンを転送してもlittleエンディアンで受信される。bigエンディアンとlittleエンディアンは配列の順番が逆なのでreverseする。
-                    Array.Reverse(data);
-                    // データ長さでbyte配列を生成する。
-                    data = new byte[BitConverter.ToInt32(data, 0)];
-                    // データを受信する。
-                    client.Receive(data, data.Length, SocketFlags.None);
-                    // 受信したデータをUTF8エンコードでstringタイプに変換してコンソールに出力する。
-                    Console.WriteLine(Encoding.UTF8.GetString(data));
-                this.Title = Encoding.UTF8.GetString(data);
-                }
-
+            this.Title = IpcConnect(port, server_name.Text);
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
-            {
-                // Connect関数でローカル(127.0.0.1)のポート番号9999で待機するソケットに接続する。
-                client.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 7891));
-                // 送るメッセージをUTF8タイプのbyte配列で変換する。
-                var data = Encoding.UTF8.GetBytes("exit");
-
-                // 転送するデータの長さをbigエンディアンで変換してサーバで送る。(4byte)
-                client.Send(BitConverter.GetBytes(data.Length));
-                // データを転送する。
-                client.Send(data);
-            }
+            IpcSend(port, "exit");
         }
     }
 

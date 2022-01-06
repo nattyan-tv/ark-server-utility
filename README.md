@@ -17,3 +17,7 @@ I will publish them in Release.
 For now, I will not release it.  
 If you want to try it out, please clone and build it yourself.  
 (Development environment: Windows11 - 64bit/VisualStudio2022)
+
+# Device
+x64 Windows that can use .NET Framework 4.8  
+(Windows 7/8.1/10/11 64bit)

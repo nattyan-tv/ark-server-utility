@@ -2,7 +2,6 @@
 import socket, threading, sys, os
 import psutil
 
-print(os.getpid())
 # binder関数はサーバーからacceptしたら生成されるsocketインスタンスを通ってclientからデータを受信するとecho形で再送信するメソッドだ。
 def binder(client_socket, addr):
   try:
@@ -20,10 +19,12 @@ def binder(client_socket, addr):
       msg = data.decode()
       # 受信されたメッセージをコンソールに出力する。
       if msg == "exit":
+        server_socket.close()
         for p in psutil.process_iter(attrs=('name', 'pid', 'cmdline')):
           if p.info["pid"] == os.getpid():
             p.terminate()
-      print(f"[{msg}]")
+      if msg != "":
+          print(f"[{msg}]")
 
  
       # バイナリ(byte)タイプに変換する。
@@ -47,7 +48,11 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 # サーバーは複数ipを使っているPCの場合はIPを設定して、そうではない場合はNoneや''で設定する。
 # ポートはPC内で空いているポートを使う。cmdにnetstat -an | find "LISTEN"で確認できる。
-server_socket.bind(('', 7891))
+if len(sys.argv) == 1:
+  print("Port:None")
+  sys.exit(0)
+server_socket.bind(('', sys.argv[1]))
+print("Port:" + sys.argv[1])
 # server設定が完了すればlistenを開始する。
 server_socket.listen()
  

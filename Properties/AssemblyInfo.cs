@@ -7,10 +7,10 @@ using System.Windows;
 // アセンブリに関する一般情報は以下の属性セットをとおして制御されます。
 // アセンブリに関連付けられている情報を変更するには、
 // これらの属性値を変更してください。
-[assembly: AssemblyTitle("ark_server_utility")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("ARK: Server Utility")]
+[assembly: AssemblyDescription("ARK: Survival Evolvedの非公式サーバーを立てるアプリ")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("NattyanTV")]
 [assembly: AssemblyProduct("ark_server_utility")]
 [assembly: AssemblyCopyright("Copyright ©  2021")]
 [assembly: AssemblyTrademark("")]
@@ -53,3 +53,4 @@ using System.Windows;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: NeutralResourcesLanguage("ja-JP")]
