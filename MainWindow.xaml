@@ -22,7 +22,10 @@
             </MenuItem>
             <MenuItem Header="Debug">
                 <MenuItem Header="Start current server" Click="start_debug"/>
-                <MenuItem Header="Send message" Click="send_pro"/>
+                <MenuItem Header="Connect message" Click="connect_pro"/>
+                <MenuItem Header="Send message (send only)" Click="send_pro"/>
+                <MenuItem Header="Get ipc system pid" Click="get_pid"/>
+                <MenuItem Header="Get ipc address" Click="get_addr"/>
             </MenuItem>
         </Menu>
         <!-- 上部ステータス -->

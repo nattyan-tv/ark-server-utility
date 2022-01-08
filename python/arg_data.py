@@ -41,6 +41,6 @@ for i in range(len(data)-1):
 
     main = main + "\n" + f'dict.Add("{data_ca}", "{data_c[2]}");'
 
-with open("D:/vs_repos/ark_server_utility/python/exports.txt", mode="w", encoding="utf-8") as f:
+with open("exports.txt", mode="w", encoding="utf-8") as f:
     f.write(main)
 # 今回やったのは、「?」系の起動オプション

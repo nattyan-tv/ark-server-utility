@@ -13,6 +13,7 @@ using Microsoft.WindowsAPICodePack.Dialogs;
 using System.Text;
 using System.Net.Sockets;
 using System.Management;
+using System.Threading;
 
 
 namespace ark_server_utility
@@ -23,8 +24,17 @@ namespace ark_server_utility
     public partial class MainWindow : Window
     {
         private List<arg_data> args = new List<arg_data>();
+
+        /// ARK: Server Utilityのバージョン
+        /// v[メジャー].[マイナー].[適当]
+        public string version = "v0.9.1";
+
+
+        // グローバルでポートを入れる変数
         public int port;
-        public string IpcConnect(int port, string text)
+
+        // IPC通信で、出力を返す
+        public string IpcConnect(string text)
         {
             using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
             {
@@ -41,7 +51,9 @@ namespace ark_server_utility
             }
 
         }
-        public void IpcSend(int port, string text)
+
+        // IPC通信で、出力を変えさない
+        public void IpcSend(string text)
         {
             using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
             {
@@ -52,20 +64,70 @@ namespace ark_server_utility
                 return;
             }
         }
+
         public MainWindow()
         {
-            // var first_run = new System.Diagnostics.Process();
-            // first_run.StartInfo.FileName = @"python.exe";
-            // first_run.StartInfo.Arguments = "python/settings.py first";
-            // first_run.StartInfo.UseShellExecute = false;
-            // first_run.StartInfo.CreateNoWindow = true;
-            // first_run.StartInfo.RedirectStandardOutput = true;
-            // first_run.Start();
-            // first_run.WaitForExit();
-            // first_run.Close();
-            // return;
-            InitializeComponent();
+            // 辞書形式を宣言
             var dict = new Dictionary<string, List<string>>();
+
+            // IPC通信を開始するためのポート検索するスクリプトを実行する
+            var ipc_port = new Process
+            {
+                StartInfo = new ProcessStartInfo("python/search_port.exe")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                }
+            };
+            ipc_port.Start();
+            StreamReader port_num = ipc_port.StandardOutput;
+            port = int.Parse(port_num.ReadLine());
+            Console.WriteLine("Port for IPC Connection:" + port);
+            ipc_port.WaitForExit();
+            ipc_port.Close();
+
+            // IPC通信を開始する
+            var ipc_main = new Process
+            {
+                StartInfo = new ProcessStartInfo("python/ipc_main.exe")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    Arguments = port.ToString(),
+                    CreateNoWindow = true
+                }
+            };
+
+            Console.WriteLine("IPCプログラムを実行します...");
+            ipc_main.Start();
+            int count = 0;
+            while (true)
+            {
+                count++;
+                if (count == 11)
+                {
+                    System.Windows.Forms.MessageBox.Show("IPC通信が確立されませんでした。\nファイアーウォールの設定などを確認してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                    ipc_main.Close();
+                    this.Close();
+                }
+                try
+                {
+                    IpcSend("");
+                    Console.WriteLine("IPC通信が確立されました。");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    // 3,4回までなら許容範囲
+                    Console.WriteLine("IPC通信が確立されませんでした。\n\n・エラー\n" + ex.ToString() + "\n試行回数:" + count.ToString() + "/10");
+                    Task.Delay(50);
+                }
+            }
+
+
+            // XAMLとかなんとか...
+            InitializeComponent();
 
             // 起動オプションの引数をぉおお！！！ここにぃいいい！！！つっこむうぅうう！！！ぜんぶうぅうううう！！（地獄）
 
@@ -74,57 +136,14 @@ namespace ark_server_utility
             Console.WriteLine(File.Exists(@"settings.json"));
             if (!File.Exists(@"settings.json"))
             {
-                Console.WriteLine(File.Exists(@"settings.json"));
-                var myProcess = new Process
-                {
-                    StartInfo = new ProcessStartInfo("python.exe")
-                    {
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        Arguments = "python/settings.py first",
-                        CreateNoWindow = true
-                    }
-                };
-                myProcess.Start();
-                myProcess.WaitForExit();
-                myProcess.Close();
-                Console.WriteLine(File.Exists(@"settings.json"));
-                // string[,] settings_data = new string[99, 3];
+                IpcSend("settings first");
             }
-            var read_pro = new Process
-            {
-                StartInfo = new ProcessStartInfo("python.exe")
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    Arguments = "python/settings.py read 1",
-                    CreateNoWindow = true
-                }
-            };
-            read_pro.Start();
-            StreamReader read_str = read_pro.StandardOutput;
-            string data_1 = read_str.ReadLine();
-            read_pro.WaitForExit();
-            read_pro.Close();
-            string[] arr = data_1.Split(',');
+            string[] arr = IpcConnect("settings read 1").Split(',');
+            Console.WriteLine(arr.ToString());
             label_name.Content = "サーバー名：" + arr[0];
             label_map.Content = "マップ名：" + arr[1];
             label_dir.Content = "ディレクトリ：" + arr[2];
-            var value_pro = new Process
-            {
-                StartInfo = new ProcessStartInfo("python")
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    Arguments = "python/settings.py value",
-                    CreateNoWindow = true
-                }
-            };
-            value_pro.Start();
-            StreamReader val_read = value_pro.StandardOutput;
-            string value = val_read.ReadLine();
-            value_pro.WaitForExit();
-            value_pro.Close();
+            string value = IpcConnect("settings value");
             if (value == "1")
             {
                 del_list.IsEnabled = false;
@@ -134,21 +153,7 @@ namespace ark_server_utility
                 // サーバーデータがインストールされていない場合の処理
                 start_server.IsEnabled = false;
                 install_server.Content = "インストール";
-                var version_pro = new Process
-                {
-                    StartInfo = new ProcessStartInfo("python")
-                    {
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        Arguments = "python/version.py version 0",
-                        CreateNoWindow = true
-                    }
-                };
-                version_pro.Start();
-                StreamReader ver_read = version_pro.StandardOutput;
-                string version = ver_read.ReadLine();
-                version_pro.WaitForExit();
-                version_pro.Close();
+                string version = IpcConnect("webapi version 0");
                 latest_version.Content = "配信されている最新バージョン：" + version;
             }
             else
@@ -156,22 +161,8 @@ namespace ark_server_utility
                 // サーバーデータがインストールされている場合の処理
                 start_server.IsEnabled = true;
                 install_server.Content = "アンインストール";
-                var version_pro = new Process
-                {
-                    StartInfo = new ProcessStartInfo("python")
-                    {
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        Arguments = "python/webapi.py version 1",
-                        CreateNoWindow = true
-                    }
-                };
-                version_pro.Start();
-                StreamReader ver_read = version_pro.StandardOutput;
-                string version = ver_read.ReadLine();
+                string version = IpcConnect("webapi version 1");
                 Console.WriteLine(version);
-                version_pro.WaitForExit();
-                version_pro.Close();
                 string[] vers = version.Split(',');
                 latest_version.Content = "配信されている最新バージョン：" + vers[0];
                 current_version.Content = "インストールされているバージョン：" + vers[1];
@@ -191,40 +182,14 @@ namespace ark_server_utility
                 query_port.IsEnabled = true;
                 arg_setting_box.IsEnabled = true;
             }
-            var ipc_port = new Process
-            {
-                StartInfo = new ProcessStartInfo("python")
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    Arguments = "python/search_port.py",
-                    CreateNoWindow = true
-                }
-            };
-            ipc_port.Start();
-            StreamReader port_num = ipc_port.StandardOutput;
-            port = int.Parse(port_num.ReadLine());
-            ipc_port.WaitForExit();
-            ipc_port.Close();
-            var ipc_main = new Process
-            {
-                StartInfo = new ProcessStartInfo("python")
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    Arguments = "python/ipc_main.py" + port,
-                    CreateNoWindow = true
-                }
-            };
-            ipc_main.Start();
-
             server_name.Text = arr[0];
             map.Text = arr[1];
             server_dir.Text = arr[2];
             server_list.Items.Add(arr[0]);
             server_list.Text = arr[0];
             main_pbar.Value = 100;
-            main_ptext.Content = "ARK: Server Utility";
+            main_ptext.Content = "ARK: Server Utility " + version;
+            Console.WriteLine("\n####################\n\nARK: Server Utility \nVersion:" + version + "\nCreated by: nattyan-tv\n\n####################\n");
         }
         private void start_debug(object sender, RoutedEventArgs e)
         {
@@ -337,21 +302,17 @@ namespace ark_server_utility
             label_name.Content = "サーバー名：" + server_name.Text;
             label_map.Content = "マップ名：" + map.Text;
             label_dir.Content = "ディレクトリ：" + server_dir.Text;
-            string edit_set = "python/settings.py";
-            var edit_pro = new Process
+            string rs = IpcConnect("settings edit 1 " + server_name.Text + " " + map.Text + " " + server_dir.Text);
+            Console.WriteLine(rs);
+            if (rs != "OK")
             {
-                StartInfo = new ProcessStartInfo("python")
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    Arguments = edit_set + " edit 1 " + server_name.Text + " " + map.Text + " " + server_dir.Text,
-                    CreateNoWindow = true
-                }
-            };
-            edit_pro.Start();
-            edit_pro.WaitForExit();
-            edit_pro.Close();
-            System.Windows.Forms.MessageBox.Show("保存しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                System.Windows.Forms.MessageBox.Show("設定保存時にエラーが発生しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            else
+            {
+                System.Windows.Forms.MessageBox.Show("保存しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+            }
+            
         }
 
         private void install_server_Click(object sender, RoutedEventArgs e)
@@ -364,23 +325,7 @@ namespace ark_server_utility
                     return;
                 }
                 /// サーバーが起動している場合は終了する的な処理を。
-                string read_set = "python/settings.py";
-                var read_pro = new Process
-                {
-                    StartInfo = new ProcessStartInfo("python")
-                    {
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        Arguments = read_set + " read 1",
-                        CreateNoWindow = true
-                    }
-                };
-                read_pro.Start();
-                StreamReader read_str = read_pro.StandardOutput;
-                string data = read_str.ReadLine();
-                read_pro.WaitForExit();
-                read_pro.Close();
-                string[] arr = data.Split(',');
+                string[] arr = IpcConnect("settings read 1").Split(',');
                 main_pbar.Value = 0;
                 main_ptext.Content = "データアンインストール処理中...";
                 try
@@ -428,24 +373,7 @@ namespace ark_server_utility
                 
                 main_pbar.Value = 50;
                 main_ptext.Content = "インストール処理中...";
-                string read_set = "python/settings.py";
-                var read_pro = new Process
-                {
-                    StartInfo = new ProcessStartInfo("python")
-                    {
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        Arguments = read_set + " read 1",
-                        CreateNoWindow = true
-                    }
-                };
-                read_pro.Start();
-                StreamReader read_str = read_pro.StandardOutput;
-                string data = read_str.ReadLine();
-                read_pro.WaitForExit();
-                read_pro.Close();
-                string[] arr = data.Split(',');
-
+                string[] arr = IpcConnect("settings read 1").Split(',');
                 main_pbar.Value = 75;
                 main_ptext.Content = "インストール処理中...";
                 /// SteamCMDよりARKをダウンロード
@@ -478,7 +406,7 @@ namespace ark_server_utility
         {
             using (var cofd = new CommonOpenFileDialog()
             {
-                Title = "データを保存する場所を選択してください。",
+                Title = "サーバーを保存する場所を選択してください。",
                 InitialDirectory = @"C:",
                 // フォルダ選択モードにする
                 RestoreDirectory = true,
@@ -495,22 +423,7 @@ namespace ark_server_utility
 
         private void add_list_bt(object sender, RoutedEventArgs e)
         {
-            var value_pro = new Process
-            {
-                StartInfo = new ProcessStartInfo("python")
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    Arguments = "python/settings.py value",
-                    CreateNoWindow = true
-                }
-            };
-            value_pro.Start();
-            StreamReader val_read = value_pro.StandardOutput;
-            string value = val_read.ReadLine();
-            value_pro.WaitForExit();
-            value_pro.Close();
-            int new_value = int.Parse(value);
+            int new_value = int.Parse(IpcConnect("settings value"));
             new_value++;
             server_list.Items.Add("server" + new_value);
             server_list.Text = "server" + new_value;
@@ -524,42 +437,18 @@ namespace ark_server_utility
             query_port.IsEnabled = false;
             server_pass_bool.IsEnabled = false;
             admin_pass.IsEnabled = false;
-            var list_pro = new Process
-            {
-                StartInfo = new ProcessStartInfo("python")
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    Arguments = "python/settings.py write server" + new_value + " TheIsland C:\\",
-                    CreateNoWindow = true
-                }
-            };
-            list_pro.Start();
-            list_pro.WaitForExit();
-            list_pro.Close();
+
+            IpcSend("write server" + new_value + " TheIsland C:\\");
+
         }
 
         private void list_changed(object sender, DependencyPropertyChangedEventArgs e)
         {
             string server = server_list.Text;
             int index = server_list.Items.IndexOf(server);
-            var list_pro = new Process
-            {
-                StartInfo = new ProcessStartInfo("python")
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    Arguments = "python/settings.py read " + index,
-                    CreateNoWindow = true
-                }
-            };
-            list_pro.Start();
-            StreamReader list_read = list_pro.StandardOutput;
-            string list_string = list_read.ReadLine();
-            Console.WriteLine(list_string);
-            list_pro.WaitForExit();
-            list_pro.Close();
-            string[] arr = list_string.Split(',');
+            Console.WriteLine(index.ToString());
+            string[] arr = IpcConnect("settings read " + index).Split(',');
+            Console.WriteLine(arr.ToString());
             server_name.Text = arr[0];
             label_name.Content = "サーバー名：" + arr[0];
             map.Text = arr[1];
@@ -580,14 +469,32 @@ namespace ark_server_utility
             arg_detail.Text = item.detail;
         }
 
+        private void connect_pro(object sender, EventArgs e)
+        {
+            string rt = IpcConnect(server_name.Text);
+            System.Windows.Forms.MessageBox.Show("・返り値\n" + rt, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+        }
+
         private void send_pro(object sender, EventArgs e)
         {
-            this.Title = IpcConnect(port, server_name.Text);
+            IpcSend(server_name.Text);
+        }
+
+        private void get_pid(object sender, EventArgs e)
+        {
+            string pid = IpcConnect("debug pid");
+            System.Windows.Forms.MessageBox.Show("プロセスID:" + pid, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+        }
+
+        private void get_addr(object sender, EventArgs e)
+        {
+            string addr = IpcConnect("debug addr");
+            System.Windows.Forms.MessageBox.Show("アドレス:" + addr, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            IpcSend(port, "exit");
+            IpcSend("exit");
         }
     }
 

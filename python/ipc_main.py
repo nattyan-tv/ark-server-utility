@@ -1,73 +1,207 @@
-# ソケットを使うためにsocketモジュールをimportする。
 import socket, threading, sys, os
-import psutil
+import psutil, json, requests, re
 
-# binder関数はサーバーからacceptしたら生成されるsocketインスタンスを通ってclientからデータを受信するとecho形で再送信するメソッドだ。
+#初回設定書き込み用のダミーデータ
+first_setting = dict()
+first_setting["value"] = 1
+first_setting["1"] = {"name":"Server1","map":"Ragnarok","dir":"servers/s1"}
+
+# 設定ファイルの場所
+config_dir = "\\ShooterGame\\Saved\\Config\\WindowsServer\\"
+
+
 def binder(client_socket, addr):
-  try:
-    # 接続状況でクライアントからデータ受信を待つ。
-    # もし、接続が切れちゃうとexceptが発生する。
-    while True:
-      # socketのrecv関数は連結されたソケットからデータを受信を待つ関数だ。最初に4byteを待機する。
-      data = client_socket.recv(4)
-      # 最初4byteは転送するデータのサイズだ。そのサイズはlittleエンディアンでbyteからintタイプに変換する。
-      # C#のBitConverterはbigエンディアンで処理する。
-      length = int.from_bytes(data, "big")
-      # データを受信する。上の受け取ったサイズほど
-      data = client_socket.recv(length)
-      # 受信されたデータをstr形式でdecodeする。
-      msg = data.decode()
-      # 受信されたメッセージをコンソールに出力する。
-      if msg == "exit":
-        server_socket.close()
-        for p in psutil.process_iter(attrs=('name', 'pid', 'cmdline')):
-          if p.info["pid"] == os.getpid():
-            p.terminate()
-      if msg != "":
-          print(f"[{msg}]")
+    try:
+        while True:
+            data = client_socket.recv(4)
+            length = int.from_bytes(data, "big")
+            data = client_socket.recv(length)
+            msg = data.decode()
+            print([msg])
+            rt_msg = msg
 
- 
-      # バイナリ(byte)タイプに変換する。
-      data = msg.encode()
-      # バイナリのデータサイズを計算する。
-      length = len(data)
-      # データサイズをlittleエンディアンタイプのbyteに変換して転送する。(※これがバグかbigを入れてもlittleエンディアンで転送する。)
-      client_socket.sendall(length.to_bytes(4, byteorder='big'))
-      # データをクライアントに転送する。
-      client_socket.sendall(data)
-  except:
-    # 接続が切れちゃうとexceptが発生する。
-    pass
-  finally:
-    # 接続が切れたらsocketリソースを返却する。
-    client_socket.close()
- 
-# ソケットを生成する。
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# ソケットレベルとデータタイプを設定する。
-server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-# サーバーは複数ipを使っているPCの場合はIPを設定して、そうではない場合はNoneや''で設定する。
-# ポートはPC内で空いているポートを使う。cmdにnetstat -an | find "LISTEN"で確認できる。
-if len(sys.argv) == 1:
-  print("Port:None")
-  sys.exit(0)
-server_socket.bind(('', sys.argv[1]))
-print("Port:" + sys.argv[1])
-# server設定が完了すればlistenを開始する。
-server_socket.listen()
- 
-try:
-  # サーバーは複数クライアントから接続するので無限ループを使う。
-  while True:
-    # clientから接続すればacceptが発生する。
-    # clientソケットとaddr(アドレス)をタプルで受け取る。
-    client_socket, addr = server_socket.accept()
-    # スレッドを利用してclient接続を作って、またaccept関数に行ってclientを待機する。
-    th = threading.Thread(target=binder, args = (client_socket,addr))
-    # スレッド開始
-    th.start()
-except:
-  pass
-finally:
-  # エラーが発生すればサーバーソケットを閉める。
-  server_socket.close()
+
+            # IPC通信・自プログラムを終了する
+            if msg == "exit":
+                server_socket.close()
+                for p in psutil.process_iter(attrs=('name', 'pid', 'cmdline')):
+                    if p.info["pid"] == os.getpid():
+                        p.terminate()
+
+
+            if msg[0:8] == "settings":
+
+                # 初回起動時のダミーデータを書き込む
+                # settings first
+                # OK
+                if msg[9:14] == "first":
+                    with open("settings.json", mode='w', encoding="utf-8") as f:
+                        json.dump(first_setting, f, ensure_ascii=False, indent=4)
+                    rt_msg = "OK"
+
+                # サーバー数を呼び出す
+                # settings value
+                # [サーバー数]
+                elif msg[9:14] == "value":
+                    with open("settings.json", mode="r", encoding="utf-8") as f:
+                        settings = json.load(f)
+                    rt_msg = settings["value"]
+
+                # サーバーの設定を呼び出す
+                # settings read [NUM]
+                # [サーバー名],[サーバーマップ],[サーバーディレクトリ]
+                elif msg[9:13] == "read":
+                    arg = msg[14:].split(" ")
+                    with open("settings.json", mode="r", encoding="utf-8") as f:
+                        settings = json.load(f)
+                    if int(settings["value"]) < int(arg[0]):
+                        rt_msg = "over"
+                    rt_msg = f'{settings[arg[0]]["name"]},{settings[arg[0]]["map"]},{settings[arg[0]]["dir"]}'
+                
+                # サーバーの設定を追記する
+                # settings write [NAME] [MAP] [DIR]
+                # OK
+                elif msg[9:14] == "write":
+                    arg = msg[15:].split(" ")
+                    with open("settings.json", mode="r", encoding="utf-8") as f:
+                        settings = json.load(f)
+                    settings["value"] = settings["value"] + 1
+                    settings[f"{settings['value']}"] = {
+                            "name":arg[0],
+                            "map":arg[1],
+                            "dir":arg[2]
+                        }
+                    with open("settings.json", mode='w', encoding="utf-8") as f:
+                        json.dump(settings, f, ensure_ascii=False, indent=4)
+                    rt_msg = "OK"
+
+                # サーバーの設定を編集する
+                # settings edit [NUM] [NAME] [MAP] [DIR]
+                # OK
+                elif msg[9:13] == "edit":
+                    arg = msg[14:].split(" ")
+                    with open("settings.json", mode="r", encoding="utf-8") as f:
+                        settings = json.load(f)
+                    settings[str(arg[0])] = {
+                            "name":arg[1],
+                            "map":arg[2],
+                            "dir":arg[3]
+                        }
+                    with open("settings.json", mode='w', encoding="utf-8") as f:
+                        json.dump(settings, f, ensure_ascii=False, indent=4)
+                    rt_msg = "OK"
+
+
+
+            elif msg[0:6] == "webapi":
+                arg = msg[7:].split(" ")
+                # 最新バージョンを取得
+                # webapi version 0
+                # [配信されているバージョン]
+                if arg[0] == "version" and arg[1] == "0":
+                    url = "http://arkdedicated.com/version"
+                    req = requests.get(url)
+                    version = req.json()
+                    rt_msg = version
+
+                # 最新バージョンと現行バージョンを取得
+                # webapi version [NUM]
+                # [配信されているバージョン],[インストールされているバージョン]
+                elif arg[0] == "version" and arg[1] != "0":
+                    url = "http://arkdedicated.com/version"
+                    req = requests.get(url)
+                    latest_version = req.json()
+                    with open("settings.json", mode="r", encoding="utf-8") as f:
+                        settings = json.load(f)
+                    locate = settings[str(arg[1])]["dir"]
+                    with open(locate + "\\version.txt", mode="r", encoding="utf-8") as f:
+                        current_version = f.read()
+                    rt_msg = f"{latest_version},{current_version}"
+
+
+            elif msg[0:8] == "exec_arg":
+                arg = msg[9:].split(" ")
+                # サーバー設定を変える的な（ファイルがなかった場合は作ります・設定ファイルが異常(空)だった場合も色々勝手に変更します・keyが存在しなかった場合は作ります）
+                # edit [NUM] [FILE_TYPE] [KEY] [VALUE]
+                ## ※FILE_TYPEは1又は2（GameUserSettings.iniとGame.iniを分ける）
+                # OK
+                if arg[0] == "edit":
+                    with open("settings.json", mode="r", encoding="utf-8") as f:
+                        settings = json.load(f)
+                    install_dir = settings[arg[1]]["dir"]
+                    if arg[2] == "1":
+                        setting_file = "GameUserSettings.ini"
+                    elif arg[2] == "2":
+                        setting_file = "Game.ini"
+                    else:
+                        rt_msg = "unknown_arg(3)"
+                    if os.path.isfile(f"{install_dir}{config_dir}{setting_file}") == False:
+                        with open(f"{install_dir}{config_dir}{setting_file}", mode="w") as f:
+                            pass
+                    with open(f"{install_dir}{config_dir}{setting_file}", mode="r", encoding="utf-8") as f:
+                        datalist = f.readlines()
+                    if arg[2] == "1" and datalist == [] or arg[2] == "1" and datalist[0] != "[ServerSettings]\n":
+                        datalist.insert(0, "[ServerSettings]\n")
+                    if arg[2] == "2" and datalist == [] or arg[2] == "2" and datalist[0] != "[/script/shootergame.shootergamemode]\n":
+                        datalist.insert(0, "[/script/shootergame.shootergamemode]\n")
+                    change_flag = 0
+                    for i in range(len(datalist)):
+                        if re.match(f"{arg[3]}=",datalist[i]) == None:
+                            continue
+                        else:
+                            datalist[i] = f"{datalist[i][:len(arg[3])]}={arg[4]}\n"
+                            change_flag = 1
+                            break
+                    if change_flag == 0:
+                        datalist.insert(1, f"{arg[3]}={arg[4]}\n")
+                    with open(f"{install_dir}{config_dir}{setting_file}", mode="w") as f:
+                        f.writelines(datalist)
+                    rt_msg = "OK"
+            
+
+            elif msg[0:5] == "debug":
+                arg = msg[6:].split(" ")
+                if arg [0] == "pid":
+                    rt_msg = os.getpid()
+                elif arg[0] == "addr":
+                    rt_msg = [addr,sys.argv[1]]
+            
+            if msg != "":
+                # rt_msg = f"[{msg}]"
+                pass
+            
+
+            print([rt_msg])
+            data = str(rt_msg).encode()
+            length = len(data)
+            client_socket.sendall(length.to_bytes(4, byteorder='big'))
+            client_socket.sendall(data)
+    except:
+        pass
+    finally:
+        client_socket.close()
+
+
+if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        print("Port:None")
+        sys.exit(0)
+    for p in psutil.process_iter(attrs=('name', 'pid', 'cmdline')):
+        if p.info["name"] == "ipc_main.exe" and p.info["pid"] != os.getpid():
+            p.terminate()
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    server_socket.bind(('', int(sys.argv[1])))
+    print("Port:" + sys.argv[1])
+    server_socket.listen()
+
+    try:
+        while True:
+            client_socket, addr = server_socket.accept()
+            th = threading.Thread(target=binder, args = (client_socket,addr))
+            th.start()
+    except:
+        pass
+    finally:
+        server_socket.close()
