@@ -141,14 +141,24 @@ namespace ark_server_utility
                 IpcSend("settings first");
             }
             string[] arr = IpcConnect("settings read 1").Split(',');
-            Console.WriteLine(arr.ToString());
             label_name.Content = "サーバー名：" + arr[0];
-            label_map.Content = "マップ名：" + arr[1];
             label_dir.Content = "ディレクトリ：" + arr[2];
+
+
             string value = IpcConnect("settings value");
             if (value == "1")
             {
                 del_list.IsEnabled = false;
+                server_list.Items.Add(arr[0]);
+            }
+            else
+            {
+                del_list.IsEnabled = true;
+                string[] names = IpcConnect("settings name").Split(',');
+                for (int i = 0; i < int.Parse(value); i++)
+                {
+                    server_list.Items.Add(names[i]);
+                }
             }
             if (!File.Exists(@arr[2] + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe"))
             {
@@ -185,9 +195,29 @@ namespace ark_server_utility
                 arg_setting_box.IsEnabled = true;
             }
             server_name.Text = arr[0];
-            map.Text = arr[1];
+            Console.WriteLine(arr[1].Contains("Custom/"));
+            if (arr[1].Contains("Custom/") == false)
+            {
+                map.SelectedValue = arr[1];
+                custom_map_name.IsEnabled = false;
+                custom_map_name.Text = "";
+                map_id.IsEnabled = false;
+                map_id.Text = "";
+                label_map.Content = "マップ名：" + arr[1];
+            }
+            else
+            {
+                string[] vs = arr[1].Split('/');
+                map.SelectedValue = vs[0];
+                Console.WriteLine(map.SelectedValue.ToString());
+                custom_map_name.IsEnabled = true;
+                custom_map_name.Text = vs[1];
+                map_id.IsEnabled = true;
+                map_id.Text = vs[2];
+                label_map.Content = "マップ名：" + vs[1];
+            }
+            
             server_dir.Text = arr[2];
-            server_list.Items.Add(arr[0]);
             server_list.Text = arr[0];
             main_pbar.Value = 100;
             main_ptext.Content = "ARK: Server Utility " + version;
@@ -302,9 +332,19 @@ namespace ark_server_utility
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             label_name.Content = "サーバー名：" + server_name.Text;
-            label_map.Content = "マップ名：" + map.Text;
             label_dir.Content = "ディレクトリ：" + server_dir.Text;
-            string rs = IpcConnect("settings edit 1 " + server_name.Text + " " + map.Text + " " + server_dir.Text);
+            string rs;
+            Console.WriteLine(map.SelectedValue);
+            if (map.SelectedValue.ToString() == "Custom")
+            {
+                label_map.Content = "マップ名：" + custom_map_name.Text;
+                rs = IpcConnect("settings edit 1 " + server_name.Text + " Custom/" + custom_map_name.Text + "/" + map_id.Text + " " + server_dir.Text);
+            }
+            else
+            {
+                label_map.Content = "マップ名：" + map.Text;
+                rs = IpcConnect("settings edit 1 " + server_name.Text + " " + map.SelectedValue + " " + server_dir.Text);
+            }
             Console.WriteLine(rs);
             if (rs != "OK")
             {
@@ -427,21 +467,25 @@ namespace ark_server_utility
         {
             int new_value = int.Parse(IpcConnect("settings value"));
             new_value++;
+
+            Console.WriteLine(new_value.ToString());
+            Console.WriteLine(IpcConnect("settings write server" + new_value + " TheIsland C:\\").ToString());
+
             server_list.Items.Add("server" + new_value);
             server_list.Text = "server" + new_value;
             server_name.Text = "server" + new_value;
             label_name.Content = "サーバー名：server" + new_value;
-            map.Text = "TheIsland";
-            label_map.Content = "マップ名：TheIsland";
+            label_map.Content = "マップ名：The Island";
             server_dir.Text = "C:\\";
             label_dir.Content = "ディレクトリ：C:\\";
             game_port.IsEnabled = false;
             query_port.IsEnabled = false;
             server_pass_bool.IsEnabled = false;
             admin_pass.IsEnabled = false;
+            del_list.IsEnabled = true;
 
-            IpcSend("write server" + new_value + " TheIsland C:\\");
 
+            map.SelectedValue = "TheIsland";
         }
 
         private void list_changed(object sender, DependencyPropertyChangedEventArgs e)
@@ -497,6 +541,74 @@ namespace ark_server_utility
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             IpcSend("exit");
+        }
+
+        private void map_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (map.SelectedValue == null)
+            {
+                return;
+            }
+            Console.WriteLine(map.SelectedValue);
+            Console.WriteLine(map.SelectedValue == "Custom");
+            if (map.SelectedValue.ToString() == "Custom")
+            {
+                custom_map_name.IsEnabled = true;
+                map_id.IsEnabled = true;
+            }
+            else
+            {
+                custom_map_name.IsEnabled = false;
+                map_id.IsEnabled = false;
+            }
+        }
+
+        private void server_list_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            Console.WriteLine((server_list.SelectedIndex + 1));
+            string setting = IpcConnect("settings read " + (server_list.SelectedIndex + 1));
+            string[] load_settings = setting.Split(',');
+
+            server_name.Text = load_settings[0];
+            label_name.Content = "サーバー名：" + load_settings[0];
+
+            if (load_settings[0].Contains("Custom/") == false)
+            {
+                map.SelectedValue = load_settings[1];
+                label_map.Content = "マップ名：" + load_settings[1];
+                custom_map_name.Text = "";
+                map_id.Text = "";
+                custom_map_name.IsEnabled = false;
+                map_id.IsEnabled = false;
+            }
+            else
+            {
+                // Custom/MapName/MapID
+                string[] vs = load_settings[1].Split('/');
+                map.SelectedValue = vs[0];
+                label_map.Content = "マップ名：" + vs[1];
+                custom_map_name.Text = vs[1];
+                map_id.Text = vs[2];
+                custom_map_name.IsEnabled = true;
+                map_id.IsEnabled = true;
+            }
+
+            server_dir.Text = load_settings[2];
+            label_dir.Content = "ディレクトリ：" + load_settings[2];
+            game_port.IsEnabled = false;
+            query_port.IsEnabled = false;
+            server_pass_bool.IsEnabled = false;
+            admin_pass.IsEnabled = false;
+        }
+
+        private void del_list_Click(object sender, RoutedEventArgs e)
+        {
+            if(IpcConnect("settings value") == "2")
+            {
+                del_list.IsEnabled = false;
+            }
+            IpcSend("settings del " + (map.SelectedIndex+1));
+            map.SelectedIndex = map.SelectedIndex - 1;
         }
     }
 

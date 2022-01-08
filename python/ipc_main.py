@@ -47,6 +47,18 @@ def binder(client_socket, addr):
                         settings = json.load(f)
                     rt_msg = settings["value"]
 
+                # サーバーの名前一覧を呼び出す
+                # settings name
+                # [名前],[名前],[名前]...
+                elif msg[9:13] == "name":
+                    se = ""
+                    with open("settings.json", mode="r", encoding="utf-8") as f:
+                        settings = json.load(f)
+                    for i in range(settings["value"]):
+                        se = se + "," + settings[f"{i+1}"]["name"]
+                    se = se[1:]
+                    rt_msg = se
+
                 # サーバーの設定を呼び出す
                 # settings read [NUM]
                 # [サーバー名],[サーバーマップ],[サーバーディレクトリ]
@@ -87,6 +99,19 @@ def binder(client_socket, addr):
                             "map":arg[2],
                             "dir":arg[3]
                         }
+                    with open("settings.json", mode='w', encoding="utf-8") as f:
+                        json.dump(settings, f, ensure_ascii=False, indent=4)
+                    rt_msg = "OK"
+                
+                # サーバーの設定を削除する
+                # settings del [NUM]
+                # OK
+                elif msg[9:12] == "del":
+                    num = msg[13:]
+                    with open("settings.json", mode="r", encoding="utf-8") as f:
+                        settings = json.load(f)
+                    settings["value"] = settings["value"] - 1
+                    del settings[str(num)]
                     with open("settings.json", mode='w', encoding="utf-8") as f:
                         json.dump(settings, f, ensure_ascii=False, indent=4)
                     rt_msg = "OK"
