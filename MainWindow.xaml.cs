@@ -25,6 +25,7 @@ namespace ark_server_utility
     {
         private List<arg_data> args = new List<arg_data>();
 
+
         /// ARK: Server Utilityのバージョン
         /// v[メジャー].[マイナー].[適当]
         public string version = "v0.9.1";
@@ -67,6 +68,7 @@ namespace ark_server_utility
 
         public MainWindow()
         {
+
             // 辞書形式を宣言
             var dict = new Dictionary<string, List<string>>();
 
