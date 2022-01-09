@@ -78,17 +78,17 @@
                             </Grid>
                             <ComboBox x:Name="map" Height="31" Margin="92,116,10,0" VerticalAlignment="Top" FontSize="18" SelectedValuePath="Tag" SelectionChanged="map_SelectionChanged">
                                 <ComboBoxItem Content="The Island" Tag="TheIsland"/>
-                                <ComboBoxItem Tag="TheCenter">The Center</ComboBoxItem>
-                                <ComboBoxItem Tag="ScorchedEarth_P">Scorched Earth</ComboBoxItem>
-                                <ComboBoxItem Tag="Ragnarok">Ragnarok</ComboBoxItem>
-                                <ComboBoxItem Tag="Aberration_P">Aberration</ComboBoxItem>
-                                <ComboBoxItem Tag="Extinction">Extinction</ComboBoxItem>
-                                <ComboBoxItem Tag="Valguero_P">Valguero</ComboBoxItem>
-                                <ComboBoxItem Tag="Genesis">Genesis: Part1</ComboBoxItem>
-                                <ComboBoxItem Tag="CrystalIsles">Crystal Isles</ComboBoxItem>
-                                <ComboBoxItem Tag="Gen2">Genesis: Part2</ComboBoxItem>
-                                <ComboBoxItem Tag="LostIsland">Lost Island</ComboBoxItem>
-                                <ComboBoxItem Tag="Custom">MODマップ...</ComboBoxItem>
+                                <ComboBoxItem Content="The Center" Tag="TheCenter"/>
+                                <ComboBoxItem Content="Scorched Earth" Tag="ScorchedEarth_P"/>
+                                <ComboBoxItem Content="Ragnarok" Tag="Ragnarok"/>
+                                <ComboBoxItem Content="Aberration" Tag="Aberration_P"/>
+                                <ComboBoxItem Content="Extinction" Tag="Extinction"/>
+                                <ComboBoxItem Content="Valguero" Tag="Valguero_P"/>
+                                <ComboBoxItem Content="Genesis: Part1" Tag="Genesis"/>
+                                <ComboBoxItem Content="Crystal Isles" Tag="CrystalIsles"/>
+                                <ComboBoxItem Content="Genesis: Part2" Tag="Gen2"/>
+                                <ComboBoxItem Content="Lost Island" Tag="LostIsland"/>
+                                <ComboBoxItem Content="MODマップ..." Tag="Custom"/>
                             </ComboBox>
                             <Grid Margin="10,152,10,81">
                                 <Grid Height="34" VerticalAlignment="Center" Margin="0,0,606,0">
