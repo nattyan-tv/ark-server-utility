@@ -11,4 +11,3 @@ for i in range(len(files)):
         continue
     print(files[i])
     subprocess.run(["pyinstaller", f"{files[i]}", "--onefile", "--noconsole"])
-    shutil.copy(f"dist/{files[i][:-3]}.exe", "../bin/Debug/python/")

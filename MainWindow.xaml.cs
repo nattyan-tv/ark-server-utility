@@ -139,8 +139,23 @@ namespace ark_server_utility
             if (!File.Exists(@"settings.json"))
             {
                 IpcSend("settings first");
+                while (true)
+                {
+                    Thread.Sleep(50);
+                    if (File.Exists(@"settings.json"))
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+                Thread.Sleep(1000);
             }
-            string[] arr = IpcConnect("settings read 1").Split(',');
+            string f_r = IpcConnect("settings read 1");
+            Console.WriteLine(f_r);
+            string[] arr = f_r.Split(',');
             label_name.Content = "サーバー名：" + arr[0];
             label_dir.Content = "ディレクトリ：" + arr[2];
 
@@ -333,6 +348,7 @@ namespace ark_server_utility
         {
             label_name.Content = "サーバー名：" + server_name.Text;
             label_dir.Content = "ディレクトリ：" + server_dir.Text;
+            
             string rs;
             Console.WriteLine(map.SelectedValue);
             if (map.SelectedValue.ToString() == "Custom")
@@ -565,7 +581,11 @@ namespace ark_server_utility
 
         private void server_list_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            Console.WriteLine((server_list.SelectedIndex + 1));
+            if(server_list.SelectedItem == null)
+            {
+                return;
+            }
+            Console.WriteLine("list:"+(server_list.SelectedIndex + 1));
             string setting = IpcConnect("settings read " + (server_list.SelectedIndex + 1));
             string[] load_settings = setting.Split(',');
 
@@ -603,12 +623,22 @@ namespace ark_server_utility
 
         private void del_list_Click(object sender, RoutedEventArgs e)
         {
-            if(IpcConnect("settings value") == "2")
+            int index = server_list.SelectedIndex;
+            Console.WriteLine(index);
+            if (IpcConnect("settings value") == "2")
             {
                 del_list.IsEnabled = false;
             }
-            IpcSend("settings del " + (map.SelectedIndex+1));
-            map.SelectedIndex = map.SelectedIndex - 1;
+            IpcSend("settings del " + (index+1));
+            server_list.Items.RemoveAt(index);
+            if (index != 0)
+            {
+                server_list.SelectedIndex = index - 1;
+            }
+            else
+            {
+                server_list.SelectedIndex = 0;
+            }
         }
     }
 

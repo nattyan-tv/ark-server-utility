@@ -4,11 +4,10 @@ import psutil, json, requests, re
 #初回設定書き込み用のダミーデータ
 first_setting = dict()
 first_setting["value"] = 1
-first_setting["1"] = {"name":"Server1","map":"Ragnarok","dir":"servers/s1"}
+first_setting["1"] = {"name":"server1","map":"ThsIsland","dir":"C:\\"}
 
 # 設定ファイルの場所
 config_dir = "\\ShooterGame\\Saved\\Config\\WindowsServer\\"
-
 
 def binder(client_socket, addr):
     try:
@@ -108,13 +107,19 @@ def binder(client_socket, addr):
                 # OK
                 elif msg[9:12] == "del":
                     num = msg[13:]
-                    with open("settings.json", mode="r", encoding="utf-8") as f:
-                        settings = json.load(f)
-                    settings["value"] = settings["value"] - 1
-                    del settings[str(num)]
-                    with open("settings.json", mode='w', encoding="utf-8") as f:
-                        json.dump(settings, f, ensure_ascii=False, indent=4)
-                    rt_msg = "OK"
+                    try:
+                        with open("settings.json", mode="r", encoding="utf-8") as f:
+                            settings = json.load(f)
+                        settings["value"] = settings["value"] - 1
+                        for i in range(int(settings["value"]) - int(num)):
+                            settings[f"{int(num) + i}"] = settings[f"{int(num) + i + 1}"]
+                        del settings[f"{settings['value']+1}"]
+                        print(settings)
+                        with open("settings.json", mode='w', encoding="utf-8") as f:
+                            json.dump(settings, f, ensure_ascii=False, indent=4)
+                        rt_msg = "OK"
+                    except BaseException as err:
+                        print(err)
 
 
 
@@ -205,6 +210,7 @@ def binder(client_socket, addr):
         pass
     finally:
         client_socket.close()
+
 
 
 if __name__ == "__main__":
