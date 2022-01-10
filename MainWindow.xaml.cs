@@ -182,6 +182,8 @@ namespace ark_server_utility
                 install_server.Content = "インストール";
                 string version = IpcConnect("webapi version 0");
                 latest_version.Content = "配信されている最新バージョン：" + version;
+                current_version.Content = "インストールされていません。";
+                update_bt.Content = "アップデート";
             }
             else
             {
