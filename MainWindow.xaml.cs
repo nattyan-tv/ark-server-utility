@@ -50,10 +50,9 @@ namespace ark_server_utility
                 client.Receive(data, data.Length, SocketFlags.None);
                 return Encoding.UTF8.GetString(data);
             }
-
         }
 
-        // IPC通信で、出力を変えさない
+        // IPC通信で、出力を返さない
         public void IpcSend(string text)
         {
             using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
@@ -211,8 +210,10 @@ namespace ark_server_utility
                 query_port.IsEnabled = true;
                 arg_setting_box.IsEnabled = true;
             }
+            // 「ServerName,MapName,Directory」
+            // 「nattyantv,TheIsland,C:\\」
             server_name.Text = arr[0];
-            Console.WriteLine(arr[1].Contains("Custom/"));
+            Console.WriteLine(arr[1]);
             if (arr[1].Contains("Custom/") == false)
             {
                 map.SelectedValue = arr[1];
@@ -501,8 +502,6 @@ namespace ark_server_utility
             server_pass_bool.IsEnabled = false;
             admin_pass.IsEnabled = false;
             del_list.IsEnabled = true;
-
-
             map.SelectedValue = "TheIsland";
         }
 
@@ -510,7 +509,6 @@ namespace ark_server_utility
         {
             string server = server_list.Text;
             int index = server_list.Items.IndexOf(server);
-            Console.WriteLine(index.ToString());
             string[] arr = IpcConnect("settings read " + index).Split(',');
             Console.WriteLine(arr.ToString());
             server_name.Text = arr[0];
@@ -519,6 +517,7 @@ namespace ark_server_utility
             label_map.Content = "マップ名：" + arr[1];
             server_dir.Text = arr[2];
             label_dir.Content = "ディレクトリ：" + arr[2];
+            Console.WriteLine(server_list.SelectedValue)
         }
 
         private void arg_setting_change(object sender, RoutedEventArgs e)
