@@ -22,3 +22,7 @@ Releaseに公開していく予定です。
 # Device
 .NET Framework 4.8に対応したx64デバイス  
 (64bitのWindows7/8.1/10/11)  
+
+# License
+本コードのライセンスは、MIT Licenseとして[LICENSE](https://github.com/nattyan-tv/ark-server-utility/blob/master/LICENSE)に記載されています。  
+（MIT Licenseというのは、「ソフトウェアを自由に扱える」「再頒布時に著作権とライセンスの表示が必要」「著作者はいかなる責任も負わない」という感じです）
