@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ark_server_utility"
         mc:Ignorable="d"
-        Title="ARK: Server Utility" Width="1280" Height="1349" WindowStartupLocation="Manual" WindowState="Normal" MinWidth="500" MinHeight="315" Closing="Window_Closing">
+        Title="ARK: Server Utility" Width="1280" Height="720" WindowStartupLocation="Manual" WindowState="Normal" MinWidth="500" MinHeight="315" Closing="Window_Closing">
     <Grid Name="Grid1">
 
         <Grid.RowDefinitions>
@@ -21,13 +21,16 @@
                 <MenuItem Header="起動" Click="launch_steamCMD"/>
                 <MenuItem Header="アンインストール" Click="uninstall_steamCMD"/>
             </MenuItem>
-            <MenuItem Header="Debug">
+
+            <!-- でばっぐめにゅう -->
+            <MenuItem Header="Debug" Visibility="{x:Static local:visibil.IsDebugVisible}">
                 <MenuItem Header="Start current server" Click="start_debug"/>
                 <MenuItem Header="Connect message" Click="connect_pro"/>
                 <MenuItem Header="Send message (send only)" Click="send_pro"/>
                 <MenuItem Header="Get ipc system pid" Click="get_pid"/>
                 <MenuItem Header="Get ipc address" Click="get_addr"/>
             </MenuItem>
+
         </Menu>
         <!-- 上部ステータス -->
         <Grid>
@@ -45,7 +48,7 @@
 
             <ComboBox x:Name="server_list" Height="37" Margin="143,139,0,0" VerticalAlignment="Top" FontSize="18" IsEnabledChanged="list_changed" SelectionChanged="server_list_SelectionChanged" Grid.Column="0" Grid.ColumnSpan="2"/>
             <Grid Grid.Column="2">
-                <Button x:Name="start_server" Content="サーバーの開始" Margin="10,23,10,0" VerticalAlignment="Top" Height="37" FontSize="20" IsEnabled="False"/>
+                <Button x:Name="start_server" Content="サーバーの開始" Margin="10,23,10,0" VerticalAlignment="Top" Height="37" FontSize="20" IsEnabled="False" Click="server_start"/>
                 <Button Content="設定の保存" Margin="10,60,10,0" VerticalAlignment="Top" Height="37" FontSize="20" Click="Button_Click"/>
                 <Button x:Name="install_server" Content="インストール" Margin="10,97,10,0" VerticalAlignment="Top" Height="37" FontSize="20" Click="install_server_Click"/>
                 <Grid>
@@ -99,11 +102,19 @@
 
                             <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10,228,0,0" Width="220">
                                 <Label Content="ゲームポート：" Margin="0,2,0,2" HorizontalAlignment="Left" Width="96"/>
-                                <PasswordBox x:Name="game_port" ToolTip="ゲームポート" Margin="101,2,10,2" IsEnabled="False"/>
+                                <TextBox x:Name="game_port" ToolTip="ゲームポート" Margin="101,2,10,2" IsEnabled="False"/>
                             </Grid>
                             <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="235,228,0,0" Width="230">
                                 <Label Content="クエリーポート：" Margin="0,2,0,2" HorizontalAlignment="Left"/>
-                                <PasswordBox x:Name="query_port" ToolTip="クエリーポート" Margin="111,2,0,2" IsEnabled="False"/>
+                                <TextBox x:Name="query_port" ToolTip="クエリーポート" Margin="111,2,0,2" IsEnabled="False"/>
+                            </Grid>
+                            <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="470,228,0,0" Width="230">
+                                <Label Content="RCONポート：" Margin="0,2,0,2" HorizontalAlignment="Left"/>
+                                <TextBox x:Name="rcon_port" ToolTip="RCONポートを指定します" Margin="104,2,0,2" IsEnabled="False"/>
+                            </Grid>
+                            <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="705,228,0,0" Width="230">
+                                <Label Content="人数：" Margin="0,2,0,2" HorizontalAlignment="Left"/>
+                                <TextBox x:Name="user" ToolTip="サーバーに入れる最大人数を指定します。\nint型" Margin="63,2,0,2" IsEnabled="False"/>
                             </Grid>
                             <ComboBox x:Name="map" Height="31" Margin="92,116,10,0" VerticalAlignment="Top" FontSize="18" SelectedValuePath="Tag" SelectionChanged="map_SelectionChanged">
                                 <ComboBoxItem Content="The Island" Tag="TheIsland"/>

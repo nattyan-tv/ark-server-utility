@@ -14,22 +14,22 @@ using System.Text;
 using System.Net.Sockets;
 using System.Management;
 using System.Threading;
-
+using CoreRCON;
+using SteamQueryNet.Interfaces;
 
 namespace ark_server_utility
 {
     /// <summary>
     /// MainWindow.xaml の相互作用ロジック
     /// </summary>
+
     public partial class MainWindow : Window
     {
         private List<arg_data> args = new List<arg_data>();
 
-
         /// ARK: Server Utilityのバージョン
         /// v[メジャー].[マイナー].[適当]
         public string version = "v0.9.1";
-
 
         // グローバルでポートを入れる変数
         public int port;
@@ -65,9 +65,21 @@ namespace ark_server_utility
             }
         }
 
+        // RCON接続
+        static async Task rcon_command(ushort port, string command, string password)
+        {
+            var connection = new RCON(host:IPAddress.Parse("127.0.0.1"), port:port,password:password);
+            var result = await connection.SendCommandAsync(command);
+            Console.WriteLine(result);
+        }
+
+
+        /// <summary>
+        /// 起動時に実行されるメインスクリプト
+        /// </summary>
         public MainWindow()
         {
-
+            
             // 辞書形式を宣言
             var dict = new Dictionary<string, List<string>>();
 
@@ -84,7 +96,7 @@ namespace ark_server_utility
             ipc_port.Start();
             StreamReader port_num = ipc_port.StandardOutput;
             port = int.Parse(port_num.ReadLine());
-            Console.WriteLine("Port for IPC Connection:" + port);
+            Console.WriteLine("IPC通信用のポート:" + port);
             ipc_port.WaitForExit();
             ipc_port.Close();
 
@@ -110,7 +122,8 @@ namespace ark_server_utility
                 {
                     System.Windows.Forms.MessageBox.Show("IPC通信が確立されませんでした。\nファイアーウォールの設定などを確認してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
                     ipc_main.Close();
-                    this.Close();
+                    Environment.Exit(1);
+                    return;
                 }
                 try
                 {
@@ -127,7 +140,8 @@ namespace ark_server_utility
             }
 
 
-            // XAMLとかなんとか...
+            /// XAMLとかなんとか...
+            /// このコードより上に書くGUIの設定項目は基本的に無視される（らしい）
             InitializeComponent();
 
             // 起動オプションの引数をぉおお！！！ここにぃいいい！！！つっこむうぅうう！！！ぜんぶうぅうううう！！（地獄）
@@ -217,8 +231,8 @@ namespace ark_server_utility
 
                 arg_setting_box.IsEnabled = true;
             }
-            // 「ServerName,MapName,Directory」
-            // 「nattyantv,TheIsland,C:\\」
+            /// 「ServerName,MapName,Directory」
+            /// 「nattyantv,TheIsland,C:\\」
             server_name.Text = arr[0];
             Console.WriteLine(arr[1]);
             if (arr[1].Contains("Custom/") == false)
@@ -249,15 +263,49 @@ namespace ark_server_utility
             main_ptext.Content = "ARK: Server Utility " + version;
             Console.WriteLine("\n####################\n\nARK: Server Utility \nVersion:" + version + "\nCreated by: nattyan-tv\n\n####################\n");
         }
+
+        /// <summary>
+        /// デバッグ用メニューのコード達
+        /// </summary>
+
         private void start_debug(object sender, RoutedEventArgs e)
         {
             ProcessStartInfo processStartInfo = new ProcessStartInfo(@server_dir.Text + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe", map.Text + "?listen?SessionName=" + server_name.Text + "?ServerPassword=" + join_pass.Password + "?ServerAdminPassword=" + admin_pass.Password + "?Port=7777?QueryPort=27015?MaxPlayers=3");
             Process.Start(processStartInfo);
         }
+
+        private void connect_pro(object sender, EventArgs e)
+        {
+            string rt = IpcConnect(server_name.Text);
+            System.Windows.Forms.MessageBox.Show("・返り値\n" + rt, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+        }
+
+        private void send_pro(object sender, EventArgs e)
+        {
+            IpcSend(server_name.Text);
+        }
+
+        private void get_pid(object sender, EventArgs e)
+        {
+            string pid = IpcConnect("debug pid");
+            System.Windows.Forms.MessageBox.Show("プロセスID:" + pid, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+        }
+
+        private void get_addr(object sender, EventArgs e)
+        {
+            string addr = IpcConnect("debug addr");
+            System.Windows.Forms.MessageBox.Show("アドレス:" + addr, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+        }
+
+        /// <summary>
+        /// デバッグメニュー終わり
+        /// </summary>
+
         private void exit_app(object sender, RoutedEventArgs e)
         {
             this.Close();
         }
+
         private async void install_steamCMD(object sender, RoutedEventArgs e)
         {
             DialogResult dr = System.Windows.Forms.MessageBox.Show("SteamCMDのインストールには時間がかかります。\n実行してもよろしいですか？", "ARK Server Utility", MessageBoxButtons.OKCancel, MessageBoxIcon.Asterisk);
@@ -312,6 +360,7 @@ namespace ark_server_utility
             }
             
         }
+
         private void launch_steamCMD(object sender, RoutedEventArgs e)
         {
             if (Directory.Exists(@"SteamCMD") == false)
@@ -327,6 +376,7 @@ namespace ark_server_utility
             ProcessStartInfo processStartInfo = new ProcessStartInfo(@"SteamCMD\\steamcmd.exe");
             Process.Start(processStartInfo);
         }
+
         private void uninstall_steamCMD(object sender, RoutedEventArgs e)
         {
             DialogResult dr = System.Windows.Forms.MessageBox.Show("SteamCMDをアンインストールしてもよろしいですか？", "ARK Server Utility", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation);
@@ -496,6 +546,7 @@ namespace ark_server_utility
                 }
             }
         }
+
         private void install_dir_bt_Click(object sender, RoutedEventArgs e)
         {
             using (var cofd = new CommonOpenFileDialog()
@@ -544,6 +595,7 @@ namespace ark_server_utility
             int index = server_list.Items.IndexOf(server);
             string[] arr = IpcConnect("settings read " + index).Split(',');
             Console.WriteLine(arr.ToString());
+            // WebAPIを取得する
             server_name.Text = arr[0];
             label_name.Text = "サーバー名：" + arr[0];
             map.Text = arr[1];
@@ -573,29 +625,6 @@ namespace ark_server_utility
             arg_detail.Text = item.detail;
         }
 
-        private void connect_pro(object sender, EventArgs e)
-        {
-            string rt = IpcConnect(server_name.Text);
-            System.Windows.Forms.MessageBox.Show("・返り値\n" + rt, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-        }
-
-        private void send_pro(object sender, EventArgs e)
-        {
-            IpcSend(server_name.Text);
-        }
-
-        private void get_pid(object sender, EventArgs e)
-        {
-            string pid = IpcConnect("debug pid");
-            System.Windows.Forms.MessageBox.Show("プロセスID:" + pid, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-        }
-
-        private void get_addr(object sender, EventArgs e)
-        {
-            string addr = IpcConnect("debug addr");
-            System.Windows.Forms.MessageBox.Show("アドレス:" + addr, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-        }
-
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             IpcSend("exit");
@@ -607,8 +636,6 @@ namespace ark_server_utility
             {
                 return;
             }
-            Console.WriteLine(map.SelectedValue);
-            Console.WriteLine(map.SelectedValue == "Custom");
             if (map.SelectedValue.ToString() == "Custom")
             {
                 custom_map_name.IsEnabled = true;
@@ -680,6 +707,28 @@ namespace ark_server_utility
             else
             {
                 server_list.SelectedIndex = 0;
+            }
+        }
+
+        private void server_start(object sender, RoutedEventArgs e)
+        {
+            bool server_starting = false;
+            /// 上は仮置き
+            /// サーバーの実行ステータスをboolで取得する
+            /// 基本的にはWebAPIとかで取っていいと思う
+
+            /// https://github.com/cyilcode/SteamQueryNet
+            /// IServerQuery serverQuery = new SteamQueryNet.ServerQuery("localhost," + query_port.Text);
+
+            if (server_starting == true)
+            {
+                /// 現在のサーバーをシャットダウンする
+            }
+            else
+            {
+                /// 現在のサーバーを実行する
+                ProcessStartInfo processStartInfo = new ProcessStartInfo(@server_dir.Text + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe", map.Text + "?listen?SessionName=" + server_name.Text + "?ServerPassword=" + join_pass.Password + "?ServerAdminPassword=" + admin_pass.Password + "?Port=" + game_port.Text + "?QueryPort=" + query_port.Text + "?MaxPlayers=3");
+                Process.Start(processStartInfo);
             }
         }
     }
