@@ -38,9 +38,10 @@ for i in range(len(data)-1):
         data_c[2] = example
     # file_name = "GameUserSettings.ini"
     # main = main + "\n" + f'dict.Add("{data_ca}", "{data_c[2]}", "{example}", "{file_name}", {arg_type});'
-
-    main = main + "\n" + f'dict.Add("{data_ca}", "{data_c[2]}");'
+    # f'arg_setting.Items.Add(new arg_data { arg = "{data_ca}", detail = "{data_c[2]}"});'
+    main = main + "\n" + 'arg_setting.Items.Add(new arg_data {' + f'arg = "{data_ca}", detail = "{data_c[2]}"' + '});'
 
 with open("exports.txt", mode="w", encoding="utf-8") as f:
     f.write(main)
 # 今回やったのは、「?」系の起動オプション
+
