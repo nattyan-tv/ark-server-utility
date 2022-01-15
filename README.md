@@ -21,3 +21,7 @@ If you want to try it out, please clone and build it yourself.
 # Device
 x64 Windows that can use .NET Framework 4.8  
 (Windows 7/8.1/10/11 64bit)
+
+# License
+The license for this code is the MIT License and can be found in the [LICENSE](https://github.com/nattyan-tv/ark-server-utility/blob/master/LICENSE).
+(The simple explanation of the MIT License is that "the software can be handled freely", "the copyright and license must be displayed when redistributing", and "the copyright holder does not take any responsibility".)
