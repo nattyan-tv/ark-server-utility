@@ -6,7 +6,7 @@
         <script src="info.js"></script>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <script>
-            $.getJSON("https://nattyan-tv.github.io/ark-server-utility/info.json", (data) => {
+            $.getJSON("https://nattyan-tv.github.io/ark-server-utility/pages/info.json", (data) => {
                 console.log(`title=${data.title}\nversion=${data.version}\nauthor=${data.author}`);
                 title_div.innerHTML = "application name:" + data.title
                 author_div.innerHTML = "author name:" + data.author

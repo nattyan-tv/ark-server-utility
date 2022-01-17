@@ -150,7 +150,7 @@ def binder(client_socket, addr):
                 
                 elif arg[0] == "system":
                     try:
-                        url = requests.get("https://nattyan-tv.github.io/ark-server-utility/info.json")
+                        url = requests.get("https://nattyan-tv.github.io/ark-server-utility/pages/info.json")
                         text = url.text
                         data = json.loads(text)
                         rt_msg = data["version"]
