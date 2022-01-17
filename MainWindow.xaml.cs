@@ -28,8 +28,8 @@ namespace ark_server_utility
         private List<arg_data> args = new List<arg_data>();
 
         /// ARK: Server Utilityのバージョン
-        /// v[メジャー].[マイナー].[適当]
-        public string version = "v0.9.1";
+        /// v[メジャー].[マイナー].[ビルド]
+        public string version = "0.9.1";
 
         // グローバルでポートを入れる変数
         public int port;
@@ -300,6 +300,12 @@ namespace ark_server_utility
         /// <summary>
         /// デバッグメニュー終わり
         /// </summary>
+        /// 
+        
+        private void check_update(object sender, RoutedEventArgs e)
+        {
+            ;
+        }
 
         private void exit_app(object sender, RoutedEventArgs e)
         {

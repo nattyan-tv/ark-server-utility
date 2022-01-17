@@ -14,6 +14,7 @@
         <!-- 最上部メニュー -->
         <Menu VerticalAlignment="Top" Grid.ColumnSpan="2">
             <MenuItem Header="ファイル">
+                <MenuItem Header="更新を確認" Click="check_update"/>
                 <MenuItem Header="終了" Click="exit_app"/>
             </MenuItem>
             <MenuItem Header="SteamCMD">

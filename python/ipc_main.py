@@ -147,6 +147,15 @@ def binder(client_socket, addr):
                     with open(locate + "\\version.txt", mode="r", encoding="utf-8") as f:
                         current_version = f.read()
                     rt_msg = f"{latest_version},{current_version}"
+                
+                elif arg[0] == "system":
+                    try:
+                        url = requests.get("https://nattyan-tv.github.io/ark-server-utility/info.json")
+                        text = url.text
+                        data = json.loads(text)
+                        rt_msg = data["version"]
+                    except BaseException as err:
+                        rt_msg = f"ERR:{err}"
 
 
             elif msg[0:8] == "exec_arg":
