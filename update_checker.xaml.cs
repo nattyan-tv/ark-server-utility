@@ -1,17 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
+using System.IO;
+using System.IO.Compression;
+using System.Net;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+using System.Windows.Forms;
+using System.Text.Json;
+using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using Microsoft.WindowsAPICodePack.Dialogs;
+using System.Text;
+using System.Net.Sockets;
+using System.Management;
+using System.Threading;
+using CoreRCON;
+using SteamQueryNet.Interfaces;
 
 namespace ark_server_utility
 {
@@ -20,8 +24,44 @@ namespace ark_server_utility
     /// </summary>
     public partial class update_checker : Window
     {
-        public update_checker()
+        public int sys_port;
+        public string sys_version;
+        // IPC通信で、出力を返す
+        public string IpcConnect(string text, int port)
         {
+            using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+            {
+                client.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), port));
+                var data = Encoding.UTF8.GetBytes(text);
+                client.Send(BitConverter.GetBytes(data.Length));
+                client.Send(data);
+                data = new byte[4];
+                client.Receive(data, data.Length, SocketFlags.None);
+                Array.Reverse(data);
+                data = new byte[BitConverter.ToInt32(data, 0)];
+                client.Receive(data, data.Length, SocketFlags.None);
+                return Encoding.UTF8.GetString(data);
+            }
+        }
+
+        // IPC通信で、出力を返さない
+        public void IpcSend(string text, int port)
+        {
+            using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+            {
+                client.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), port));
+                var data = Encoding.UTF8.GetBytes(text);
+                client.Send(BitConverter.GetBytes(data.Length));
+                client.Send(data);
+                return;
+            }
+        }
+
+        public update_checker(int port, string version)
+        {
+            sys_port = port;
+            sys_version = version;
+            Console.WriteLine("ポート:" + port);
             InitializeComponent();
         }
 
@@ -34,6 +74,7 @@ namespace ark_server_utility
             };
 
             return Process.Start(pi);
+
         }
 
         private void open_github(object sender, RoutedEventArgs e)
@@ -44,11 +85,11 @@ namespace ark_server_utility
         private void check_update(object sender, RoutedEventArgs e)
         {
             util_log.Text = "";
-            util_log.Text += "\n[UPDATE - " + DateTime.Now.ToString() + "]チェック開始...";
-            MainWindow mw = new MainWindow();
-            string latest_version = mw.IpcConnect("webapi system");
+            util_log.Text += "[UPDATE - " + DateTime.Now.ToString() + "]チェック開始...";
+            InitializeComponent();
+            string latest_version = IpcConnect("webapi system", sys_port);
             util_log.Text += "\n[UPDATE - " + DateTime.Now.ToString() + "]最新バージョン情報を取得:v" + latest_version;
-            string current_version = mw.version;
+            string current_version = sys_version;
             util_log.Text += "\n[UPDATE - " + DateTime.Now.ToString() + "]現行バージョン情報を取得:v" + current_version;
             string err = "";
             if (latest_version.Contains("ERR:"))

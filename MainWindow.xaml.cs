@@ -35,7 +35,7 @@ namespace ark_server_utility
         public int port;
 
         // IPC通信で、出力を返す
-        public string IpcConnect(string text)
+        public string IpcConnect(string text, int port)
         {
             using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
             {
@@ -53,7 +53,7 @@ namespace ark_server_utility
         }
 
         // IPC通信で、出力を返さない
-        public void IpcSend(string text)
+        public void IpcSend(string text, int port)
         {
             using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
             {
@@ -127,7 +127,7 @@ namespace ark_server_utility
                 }
                 try
                 {
-                    IpcSend("");
+                    IpcSend("",port);
                     Console.WriteLine("IPC通信が確立されました。");
                     break;
                 }
@@ -157,7 +157,7 @@ namespace ark_server_utility
             Console.WriteLine(File.Exists(@"settings.json"));
             if (!File.Exists(@"settings.json"))
             {
-                IpcSend("settings first");
+                IpcSend("settings first", port);
                 while (true)
                 {
                     Thread.Sleep(50);
@@ -172,14 +172,14 @@ namespace ark_server_utility
                 }
                 Thread.Sleep(1000);
             }
-            string f_r = IpcConnect("settings read 1");
+            string f_r = IpcConnect("settings read 1", port);
             Console.WriteLine(f_r);
             string[] arr = f_r.Split(',');
             label_name.Text = "サーバー名：" + arr[0];
             label_dir.Text = "ディレクトリ：" + arr[2];
 
 
-            string value = IpcConnect("settings value");
+            string value = IpcConnect("settings value", port);
             if (value == "1")
             {
                 del_list.IsEnabled = false;
@@ -188,7 +188,7 @@ namespace ark_server_utility
             else
             {
                 del_list.IsEnabled = true;
-                string[] names = IpcConnect("settings name").Split(',');
+                string[] names = IpcConnect("settings name", port).Split(',');
                 for (int i = 0; i < int.Parse(value); i++)
                 {
                     server_list.Items.Add(names[i]);
@@ -199,7 +199,7 @@ namespace ark_server_utility
                 // サーバーデータがインストールされていない場合の処理
                 start_server.IsEnabled = false;
                 install_server.Content = "インストール";
-                string version = IpcConnect("webapi version 0");
+                string version = IpcConnect("webapi version 0", port);
                 latest_version.Content = "配信されている最新バージョン：" + version;
                 current_version.Content = "インストールされていません。";
                 update_bt.Content = "アップデート";
@@ -209,7 +209,7 @@ namespace ark_server_utility
                 // サーバーデータがインストールされている場合の処理
                 start_server.IsEnabled = true;
                 install_server.Content = "アンインストール";
-                string version = IpcConnect("webapi version 1");
+                string version = IpcConnect("webapi version 1", port);
                 Console.WriteLine(version);
                 string[] vers = version.Split(',');
                 latest_version.Content = "配信されている最新バージョン：" + vers[0];
@@ -276,24 +276,24 @@ namespace ark_server_utility
 
         private void connect_pro(object sender, EventArgs e)
         {
-            string rt = IpcConnect(server_name.Text);
+            string rt = IpcConnect(server_name.Text, port);
             System.Windows.Forms.MessageBox.Show("・返り値\n" + rt, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
         }
 
         private void send_pro(object sender, EventArgs e)
         {
-            IpcSend(server_name.Text);
+            IpcSend(server_name.Text, port);
         }
 
         private void get_pid(object sender, EventArgs e)
         {
-            string pid = IpcConnect("debug pid");
+            string pid = IpcConnect("debug pid", port);
             System.Windows.Forms.MessageBox.Show("プロセスID:" + pid, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
         }
 
         private void get_addr(object sender, EventArgs e)
         {
-            string addr = IpcConnect("debug addr");
+            string addr = IpcConnect("debug addr", port);
             System.Windows.Forms.MessageBox.Show("アドレス:" + addr, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
         }
 
@@ -304,7 +304,8 @@ namespace ark_server_utility
         
         private void check_update(object sender, RoutedEventArgs e)
         {
-            ;
+            var uc = new update_checker(port,version);
+            uc.Show();
         }
 
         private void exit_app(object sender, RoutedEventArgs e)
@@ -441,14 +442,14 @@ namespace ark_server_utility
             if (map.SelectedValue.ToString() == "Custom")
             {
                 label_map.Text = "マップ名：" + custom_map_name.Text;
-                rs = IpcConnect("settings edit 1 " + server_name.Text + " Custom/" + custom_map_name.Text + "/" + map_id.Text + " " + server_dir.Text);
+                rs = IpcConnect("settings edit 1 " + server_name.Text + " Custom/" + custom_map_name.Text + "/" + map_id.Text + " " + server_dir.Text, port);
             }
             else
             {
 
                 Console.WriteLine(server_name.Text);
                 label_map.Text = "マップ名：" + map.Text;
-                rs = IpcConnect("settings edit 1 " + server_name.Text + " " + map.SelectedValue + " " + server_dir.Text);
+                rs = IpcConnect("settings edit 1 " + server_name.Text + " " + map.SelectedValue + " " + server_dir.Text, port);
             }
             Console.WriteLine(rs);
 
@@ -475,7 +476,7 @@ namespace ark_server_utility
                     return;
                 }
                 /// サーバーが起動している場合は終了する的な処理を。
-                string[] arr = IpcConnect("settings read 1").Split(',');
+                string[] arr = IpcConnect("settings read 1", port).Split(',');
                 main_pbar.Value = 0;
                 main_ptext.Content = "データアンインストール処理中...";
                 try
@@ -523,7 +524,7 @@ namespace ark_server_utility
                 
                 main_pbar.Value = 50;
                 main_ptext.Content = "インストール処理中...";
-                string[] arr = IpcConnect("settings read 1").Split(',');
+                string[] arr = IpcConnect("settings read 1", port).Split(',');
                 main_pbar.Value = 75;
                 main_ptext.Content = "インストール処理中...";
                 /// SteamCMDよりARKをダウンロード
@@ -574,11 +575,11 @@ namespace ark_server_utility
 
         private void add_list_bt(object sender, RoutedEventArgs e)
         {
-            int new_value = int.Parse(IpcConnect("settings value"));
+            int new_value = int.Parse(IpcConnect("settings value", port));
             new_value++;
 
             Console.WriteLine(new_value.ToString());
-            Console.WriteLine(IpcConnect("settings write server" + new_value + " TheIsland C:\\").ToString());
+            Console.WriteLine(IpcConnect("settings write server" + new_value + " TheIsland C:\\", port).ToString());
 
             server_list.Items.Add("server" + new_value);
             server_list.Text = "server" + new_value;
@@ -599,7 +600,7 @@ namespace ark_server_utility
         {
             string server = server_list.Text;
             int index = server_list.Items.IndexOf(server);
-            string[] arr = IpcConnect("settings read " + index).Split(',');
+            string[] arr = IpcConnect("settings read " + index, port).Split(',');
             Console.WriteLine(arr.ToString());
             // WebAPIを取得する
             server_name.Text = arr[0];
@@ -612,7 +613,7 @@ namespace ark_server_utility
 
         private void arg_setting_change(object sender, RoutedEventArgs e)
         {
-            string rt = IpcConnect("exec_arg edit " + (server_list.SelectedIndex+1) + " 2 " + arg_arg.Text + " " + arg_value.Text);
+            string rt = IpcConnect("exec_arg edit " + (server_list.SelectedIndex+1, port) + " 2 " + arg_arg.Text + " " + arg_value.Text, port);
             if (rt != "OK")
             {
                 System.Windows.Forms.MessageBox.Show("設定保存時にエラーが発生しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -633,7 +634,7 @@ namespace ark_server_utility
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            IpcSend("exit");
+            IpcSend("exit", port);
         }
 
         private void map_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -661,7 +662,7 @@ namespace ark_server_utility
                 return;
             }
             Console.WriteLine("list:"+(server_list.SelectedIndex + 1));
-            string setting = IpcConnect("settings read " + (server_list.SelectedIndex + 1));
+            string setting = IpcConnect("settings read " + (server_list.SelectedIndex + 1), port);
             string[] load_settings = setting.Split(',');
 
             server_name.Text = load_settings[0];
@@ -700,11 +701,11 @@ namespace ark_server_utility
         {
             int index = server_list.SelectedIndex;
             Console.WriteLine(index);
-            if (IpcConnect("settings value") == "2")
+            if (IpcConnect("settings value", port) == "2")
             {
                 del_list.IsEnabled = false;
             }
-            IpcSend("settings del " + (index+1));
+            IpcSend("settings del " + (index+1), port);
             server_list.Items.RemoveAt(index);
             if (index != 0)
             {

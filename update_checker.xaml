@@ -5,12 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ark_server_utility"
         mc:Ignorable="d"
-        Title="アップデートの確認" Height="270" Width="390" MinWidth="390" MaxWidth="390" MinHeight="270" MaxHeight="270">
+        Title="アップデートの確認" Height="270" Width="390" MinWidth="390" MaxWidth="390" MinHeight="270" MaxHeight="270" ResizeMode="NoResize">
     <Grid>
-        <Label Content="ARK:Server Utilityの更新の確認" Margin="10,10,10,218"/>
+        <Label Content="ARK:Server Utilityの更新の確認" Margin="10,10,10,0" Height="26" VerticalAlignment="Top"/>
         <TextBox x:Name="util_log" Margin="10,41,10,35" TextWrapping="Wrap" Text="Select a button..." IsReadOnly="True"/>
-        <Button Content="GitHubレポジトリ" Margin="10,224,260,10" Click="open_github"/>
-        <Button Content="更新の確認" Margin="135,224,10,10" Click="check_update"/>
+        <Button Content="GitHubレポジトリ" Margin="10,0,0,10" Click="open_github" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="120"/>
+        <Button Content="更新の確認" Margin="135,0,10,10" Click="check_update" Height="20" VerticalAlignment="Bottom"/>
 
     </Grid>
 </Window>

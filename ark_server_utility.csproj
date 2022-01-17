@@ -221,6 +221,9 @@
     <Compile Include="status_panel.xaml.cs">
       <DependentUpon>status_panel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="update_checker.xaml.cs">
+      <DependentUpon>update_checker.xaml</DependentUpon>
+    </Compile>
     <Compile Include="visibil.cs" />
     <Page Include="App.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -241,6 +244,9 @@
     </Compile>
     <Page Include="status_panel.xaml">
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="update_checker.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
