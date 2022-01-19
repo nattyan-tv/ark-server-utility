@@ -127,7 +127,28 @@ namespace ark_server_utility
             if (need_update)
             {
                 util_log.Text += "\n[UPDATE - " + DateTime.Now.ToString() + "]アップデートが可能です。";
-                System.Windows.Forms.MessageBox.Show("アップデートが可能です。\n最新バージョン:" + latest_version, "ARK Server Utility", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Asterisk);
+                DialogResult rt = System.Windows.Forms.MessageBox.Show("アップデートが可能です。\n最新バージョン:" + latest_version + "\nアップデートしますか？", "ARK Server Utility", System.Windows.Forms.MessageBoxButtons.YesNo, System.Windows.Forms.MessageBoxIcon.Asterisk);
+                if (rt == System.Windows.Forms.DialogResult.Yes)
+                {
+                    DialogResult rt2 = System.Windows.Forms.MessageBox.Show("保存されていない項目は破棄されます。\n本当によろしいですか？", "ARK Server Utility", System.Windows.Forms.MessageBoxButtons.YesNo, System.Windows.Forms.MessageBoxIcon.Asterisk);
+                    if (rt2 == System.Windows.Forms.DialogResult.Yes)
+                    {
+                        var updater = new Process
+                        {
+                            StartInfo = new ProcessStartInfo("python/updater.exe")
+                            {
+                                Arguments = "true",
+                                UseShellExecute = false,
+                                RedirectStandardOutput = true,
+                                CreateNoWindow = true
+                            }
+                        };
+                        updater.Start();
+                        Environment.Exit(0);
+                        return;
+                    }
+
+                }
                 return;
             }
             else

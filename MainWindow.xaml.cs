@@ -23,6 +23,8 @@ namespace ark_server_utility
     /// MainWindow.xaml の相互作用ロジック
     /// </summary>
 
+
+
     public partial class MainWindow : Window
     {
         private List<arg_data> args = new List<arg_data>();
@@ -33,6 +35,9 @@ namespace ark_server_utility
 
         // グローバルでポートを入れる変数
         public int port;
+
+        // 設定が変更された的な変数
+        public int set_changed = 0;
 
         // IPC通信で、出力を返す
         public string IpcConnect(string text, int port)
@@ -143,6 +148,7 @@ namespace ark_server_utility
             /// XAMLとかなんとか...
             /// このコードより上に書くGUIの設定項目は基本的に無視される（らしい）
             InitializeComponent();
+            server_list.MouseWheel += server_list_wheeled;
 
             // 起動オプションの引数をぉおお！！！ここにぃいいい！！！つっこむうぅうう！！！ぜんぶうぅうううう！！（地獄）
 
@@ -209,11 +215,11 @@ namespace ark_server_utility
                 // サーバーデータがインストールされている場合の処理
                 start_server.IsEnabled = true;
                 install_server.Content = "アンインストール";
-                string version = IpcConnect("webapi version 1", port);
-                Console.WriteLine(version);
+                string version = IpcConnect("webapi version 1 1", port);
+                Console.WriteLine("バージョン:[" + version + "]");
                 string[] vers = version.Split(',');
                 latest_version.Content = "配信されている最新バージョン：" + vers[0];
-                current_version.Content = "インストールされているバージョン：" + vers[1];
+                current_version.Content = "インストールされているバージョン：" + vers[1].Replace("\r", "").Replace("\n", "");
                 update_bt.IsEnabled = true;
 
                 if(float.Parse(vers[0]) > float.Parse(vers[1]))
@@ -302,6 +308,13 @@ namespace ark_server_utility
         /// </summary>
         /// 
         
+        private void server_list_wheeled(object sender, EventArgs e)
+        {
+            Console.WriteLine("Wheeled");
+            HandledMouseEventArgs wEventArgs = e as HandledMouseEventArgs;
+            wEventArgs.Handled = true;
+        }
+
         private void check_update(object sender, RoutedEventArgs e)
         {
             var uc = new update_checker(port,version);
@@ -420,10 +433,20 @@ namespace ark_server_utility
             {
                 join_pass.IsEnabled = true;
             }
+            // set_changed = 1;
         }
 
+        // 設定保存
         private void Button_Click(object sender, RoutedEventArgs e)
         {
+            if (map.SelectedValue.ToString() == "Custom")
+            {
+                if (custom_map_name.Text == "" || map_id.Text == "")
+                {
+                    System.Windows.Forms.MessageBox.Show("マップをカスタムマップにする場合は、「マップ名」と「マップID」が必要です。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    return;
+                }
+            }
             Console.WriteLine("スペース:" + server_name.Text.Contains(" "));
             if(server_name.Text.Contains(" ") == true)
             {
@@ -462,6 +485,7 @@ namespace ark_server_utility
             else
             {
                 System.Windows.Forms.MessageBox.Show("保存しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                // set_changed = 0;
             }
             
         }
@@ -653,17 +677,114 @@ namespace ark_server_utility
                 custom_map_name.IsEnabled = false;
                 map_id.IsEnabled = false;
             }
+            // set_changed = 1;
         }
 
+        // サーバーリスト変更
         private void server_list_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             if(server_list.SelectedItem == null)
             {
                 return;
             }
+            if (set_changed == 1)
+            {
+                DialogResult save = System.Windows.Forms.MessageBox.Show("設定は変更されています。\n保存しますか？", "ARK Server Utility", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                if (save == System.Windows.Forms.DialogResult.Yes)
+                {
+                    if (map.SelectedValue.ToString() == "Custom")
+                    {
+                        if (custom_map_name.Text == "" || map_id.Text == "")
+                        {
+                            System.Windows.Forms.MessageBox.Show("マップをカスタムマップにする場合は、「マップ名」と「マップID」が必要です。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                            return;
+                        }
+                    }
+                    Console.WriteLine("スペース:" + server_name.Text.Contains(" "));
+                    if (server_name.Text.Contains(" ") == true)
+                    {
+                        server_name.Text = server_name.Text.Replace(" ", "_");
+                        Console.WriteLine(server_name.Text);
+                    }
+                    Console.WriteLine(server_name.Text);
+                    label_name.Text = "サーバー名：" + server_name.Text;
+                    label_dir.Text = "ディレクトリ：" + server_dir.Text;
+                    server_list.Items.Insert(server_list.SelectedIndex + 1, server_name.Text);
+                    server_list.Items.RemoveAt(server_list.SelectedIndex);
+
+                    Console.WriteLine(server_name.Text);
+                    string rs;
+                    Console.WriteLine(map.SelectedValue);
+                    if (map.SelectedValue.ToString() == "Custom")
+                    {
+                        label_map.Text = "マップ名：" + custom_map_name.Text;
+                        rs = IpcConnect("settings edit 1 " + server_name.Text + " Custom/" + custom_map_name.Text + "/" + map_id.Text + " " + server_dir.Text, port);
+                    }
+                    else
+                    {
+
+                        Console.WriteLine(server_name.Text);
+                        label_map.Text = "マップ名：" + map.Text;
+                        rs = IpcConnect("settings edit 1 " + server_name.Text + " " + map.SelectedValue + " " + server_dir.Text, port);
+                    }
+                    Console.WriteLine(rs);
+
+                    server_list.Text = server_name.Text;
+                    Console.WriteLine(server_name.Text);
+                    if (rs != "OK")
+                    {
+                        System.Windows.Forms.MessageBox.Show("設定保存時にエラーが発生しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    else
+                    {
+                        // set_changed = 0;
+                        System.Windows.Forms.MessageBox.Show("保存しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                    }
+                    return;
+                }
+            }
             Console.WriteLine("list:"+(server_list.SelectedIndex + 1));
             string setting = IpcConnect("settings read " + (server_list.SelectedIndex + 1), port);
             string[] load_settings = setting.Split(',');
+            Console.WriteLine(setting);
+
+            if (!File.Exists(@load_settings[2] + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe"))
+            {
+                // サーバーデータがインストールされていない場合の処理
+                start_server.IsEnabled = false;
+                install_server.Content = "インストール";
+                string version = IpcConnect("webapi version 3", port);
+                latest_version.Content = "配信されている最新バージョン：" + version;
+                current_version.Content = "インストールされていません。";
+                update_bt.Content = "アップデート";
+            }
+            else
+            {
+                // サーバーデータがインストールされている場合の処理
+                start_server.IsEnabled = true;
+                install_server.Content = "アンインストール";
+                string version = IpcConnect("webapi version 2 " + (server_list.SelectedIndex + 1), port);
+                Console.WriteLine("バージョン:[" + version + "]");
+                string[] vers = version.Split(',');
+                latest_version.Content = "配信されている最新バージョン：" + vers[0];
+                current_version.Content = "インストールされているバージョン：" + vers[1].Replace("\r", "").Replace("\n", "");
+                update_bt.IsEnabled = true;
+
+                if (float.Parse(vers[0]) > float.Parse(vers[1]))
+                {
+                    update_bt.Content = "アップデート";
+                }
+                else
+                {
+                    update_bt.Content = "ファイルのチェック";
+                }
+                server_pass_bool.IsEnabled = true;
+                admin_pass.IsEnabled = true;
+                game_port.IsEnabled = true;
+                query_port.IsEnabled = true;
+
+                arg_setting_box.IsEnabled = true;
+            }
 
             server_name.Text = load_settings[0];
             label_name.Text = "サーバー名：" + load_settings[0];
@@ -695,6 +816,7 @@ namespace ark_server_utility
             query_port.IsEnabled = false;
             server_pass_bool.IsEnabled = false;
             admin_pass.IsEnabled = false;
+
         }
 
         private void del_list_Click(object sender, RoutedEventArgs e)
