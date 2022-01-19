@@ -70,7 +70,7 @@ namespace ark_server_utility
             }
         }
 
-        // RCON接続
+        // RCON接続(Pythonに移すかも)
         static async Task rcon_command(ushort port, string command, string password)
         {
             var connection = new RCON(host:IPAddress.Parse("127.0.0.1"), port:port,password:password);
@@ -856,8 +856,8 @@ namespace ark_server_utility
             else
             {
                 /// 現在のサーバーを実行する
-                ProcessStartInfo processStartInfo = new ProcessStartInfo(@server_dir.Text + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe", map.Text + "?listen?SessionName=" + server_name.Text + "?ServerPassword=" + join_pass.Password + "?ServerAdminPassword=" + admin_pass.Password + "?Port=" + game_port.Text + "?QueryPort=" + query_port.Text + "?MaxPlayers=3");
-                Process.Start(processStartInfo);
+                ProcessStartInfo ark_game = new ProcessStartInfo(@server_dir.Text + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe", map.Text + "?listen?RCONEnabled=True?RCONPort=" + rcon_port.Text);
+                Process.Start(ark_game);
             }
         }
     }
