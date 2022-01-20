@@ -268,6 +268,23 @@ namespace ark_server_utility
             main_pbar.Value = 100;
             main_ptext.Content = "ARK: Server Utility " + version;
             Console.WriteLine("\n####################\n\nARK: Server Utility \nVersion:" + version + "\nCreated by: nattyan-tv\n\n####################\n");
+            Thread status_loader = new Thread(new ThreadStart(() =>
+            {
+                status_loop();
+            }));
+ 
+            status_loader.Start();
+        }
+
+        static void status_loop()
+        {
+            int loop_i = 0;
+            for(;;)
+            {
+                Console.WriteLine(i.ToString());
+                Thread.Sleep(1000);
+                i++;
+            }
         }
 
         /// <summary>
