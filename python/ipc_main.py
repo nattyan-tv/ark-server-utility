@@ -9,7 +9,10 @@ first_setting["1"] = {"name":"server1","map":"ThsIsland","dir":"C:\\"}
 # 設定ファイルの場所
 config_dir = "\\ShooterGame\\Saved\\Config\\WindowsServer\\"
 
+# バージョン情報格納用
+
 def binder(client_socket, addr):
+    global latest_game_version
     try:
         while True:
             data = client_socket.recv(4)
@@ -132,21 +135,55 @@ def binder(client_socket, addr):
                     url = "http://arkdedicated.com/version"
                     req = requests.get(url)
                     version = req.json()
+                    latest_game_version = version
                     rt_msg = version
 
                 # 最新バージョンと現行バージョンを取得
-                # webapi version [NUM]
-                # [配信されているバージョン],[インストールされているバージョン]
-                elif arg[0] == "version" and arg[1] != "0":
+                # webapi version 1 [NUM]
+                # [配信されているバージョン(XXX.XX)],[インストールされているバージョン(XXX.XX)]
+                elif arg[0] == "version" and arg[1] == "1":
                     url = "http://arkdedicated.com/version"
                     req = requests.get(url)
                     latest_version = req.json()
                     with open("settings.json", mode="r", encoding="utf-8") as f:
                         settings = json.load(f)
-                    locate = settings[str(arg[1])]["dir"]
+                    locate = settings[str(arg[2])]["dir"]
                     with open(locate + "\\version.txt", mode="r", encoding="utf-8") as f:
                         current_version = f.read()
+                    latest_game_version = latest_version
                     rt_msg = f"{latest_version},{current_version}"
+                
+                # 現行バージョンと、キャッシュから最新バージョンを取得
+                # webapi version 2 [NUM]
+                # [ASU起動時に取得された最新バージョン],[インストールされているバージョン]
+                elif arg[0] == "version" and arg[1] == "2":
+                    with open("settings.json", mode="r", encoding="utf-8") as f:
+                        settings = json.load(f)
+                    locate = settings[str(arg[2])]["dir"]
+                    with open(locate + "\\version.txt", mode="r", encoding="utf-8") as f:
+                        current_version = f.read()
+                    rt_msg = f"{latest_game_version},{current_version}"
+                
+                # キャッシュから最新バージョンを取得
+                # webapi version 3
+                # [ASU起動時に取得された最新バージョン]
+                elif arg[0] == "version" and arg[1] == "3":
+                    try:
+                        rt_msg = latest_game_version
+                    except BaseException as err:
+                        print(err)
+                
+                # ARK: Server Utilityのバージョン情報を取得
+                # webapi system
+                # [GitHubに公開されている最新バージョン]
+                elif arg[0] == "system":
+                    try:
+                        url = requests.get("https://nattyan-tv.github.io/ark-server-utility/pages/info.json")
+                        text = url.text
+                        data = json.loads(text)
+                        rt_msg = data["version"]
+                    except BaseException as err:
+                        rt_msg = f"ERR:{err}"
 
 
             elif msg[0:8] == "exec_arg":
