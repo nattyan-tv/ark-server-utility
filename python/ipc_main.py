@@ -1,15 +1,42 @@
 import socket, threading, sys, os
 import psutil, json, requests, re
+import a2s
+from timeout_decorator import timeout, TimeoutError
 
 #初回設定書き込み用のダミーデータ
 first_setting = dict()
 first_setting["value"] = 1
-first_setting["1"] = {"name":"server1","map":"ThsIsland","dir":"C:\\"}
+
+first_setting["1"] = {
+    "name":"server1",
+    "map":"TheIsland",
+    "dir":"C:\\",
+    "query":27015,
+    "game":7777
+}
 
 # 設定ファイルの場所
 config_dir = "\\ShooterGame\\Saved\\Config\\WindowsServer\\"
 
-# バージョン情報格納用
+
+class a2s_check():
+    
+    @timeout(5)
+    def a2s_info(port: int) -> str:
+        result = a2s.info(("localhost", port))
+        return f"{result['player_count']}"
+    
+    @timeout(5)
+    def a2s_player(port: int) -> str:
+        result = a2s.players(("localhost", port))
+        for i in range(len(result)):
+            if result[i].name == "":
+                continue
+            return f"{result[i].name}" + "-" + f"{int(result[i].duration / 60 // 60)}h{int(result[i].duration / 60 % 60)}m{int(result[i].duration % 60)}s"
+
+
+
+
 
 def binder(client_socket, addr):
     global latest_game_version
@@ -63,43 +90,47 @@ def binder(client_socket, addr):
 
                 # サーバーの設定を呼び出す
                 # settings read [NUM]
-                # [サーバー名],[サーバーマップ],[サーバーディレクトリ]
+                # [サーバー名]?[サーバーマップ]?[サーバーディレクトリ]?[クエリ―ポート]?[ゲームポート]
                 elif msg[9:13] == "read":
                     arg = msg[14:].split(" ")
                     with open("settings.json", mode="r", encoding="utf-8") as f:
                         settings = json.load(f)
                     if int(settings["value"]) < int(arg[0]):
                         rt_msg = "over"
-                    rt_msg = f'{settings[arg[0]]["name"]},{settings[arg[0]]["map"]},{settings[arg[0]]["dir"]}'
+                    rt_msg = f'{settings[arg[0]]["name"]}?{settings[arg[0]]["map"]}?{settings[arg[0]]["dir"]}?{settings[arg[0]]["query"]}?{settings[arg[0]]["game"]}'
                 
                 # サーバーの設定を追記する
-                # settings write [NAME] [MAP] [DIR]
+                # settings write [NAME]?[MAP]?[DIR]?[QUERY]?[GAME]
                 # OK
                 elif msg[9:14] == "write":
-                    arg = msg[15:].split(" ")
+                    arg = msg[15:].split("?")
                     with open("settings.json", mode="r", encoding="utf-8") as f:
                         settings = json.load(f)
                     settings["value"] = settings["value"] + 1
                     settings[f"{settings['value']}"] = {
                             "name":arg[0],
                             "map":arg[1],
-                            "dir":arg[2]
+                            "dir":arg[2],
+                            "query":arg[3],
+                            "game":arg[4]
                         }
                     with open("settings.json", mode='w', encoding="utf-8") as f:
                         json.dump(settings, f, ensure_ascii=False, indent=4)
                     rt_msg = "OK"
 
                 # サーバーの設定を編集する
-                # settings edit [NUM] [NAME] [MAP] [DIR]
+                # settings edit [NUM]?[NAME]?[MAP]?[DIR]?[QUERY]?[GAME]
                 # OK
                 elif msg[9:13] == "edit":
-                    arg = msg[14:].split(" ")
+                    arg = msg[14:].split("?")
                     with open("settings.json", mode="r", encoding="utf-8") as f:
                         settings = json.load(f)
                     settings[str(arg[0])] = {
                             "name":arg[1],
                             "map":arg[2],
-                            "dir":arg[3]
+                            "dir":arg[3],
+                            "query":arg[4],
+                            "game":arg[5],
                         }
                     with open("settings.json", mode='w', encoding="utf-8") as f:
                         json.dump(settings, f, ensure_ascii=False, indent=4)
@@ -184,6 +215,16 @@ def binder(client_socket, addr):
                         rt_msg = data["version"]
                     except BaseException as err:
                         rt_msg = f"ERR:{err}"
+                
+                # a2sでサーバー情報を取得する
+                # webapi a2s-info [NUM]
+                # [TIMED OUT]or[a2s server info]
+                elif arg[0] == "a2s-info":
+                    try:
+                        rt_msg = a2s_check.a2s_info(27092)
+                    except TimeoutError:
+                        rt_msg = "timeout"
+                    
 
 
             elif msg[0:8] == "exec_arg":

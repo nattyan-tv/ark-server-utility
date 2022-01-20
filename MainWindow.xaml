@@ -30,6 +30,7 @@
                 <MenuItem Header="Send message (send only)" Click="send_pro"/>
                 <MenuItem Header="Get ipc system pid" Click="get_pid"/>
                 <MenuItem Header="Get ipc address" Click="get_addr"/>
+                <MenuItem Header="Set function 'loop_arg'" Click="set_loop_arg"/>
             </MenuItem>
 
         </Menu>
@@ -103,11 +104,11 @@
 
                             <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10,228,0,0" Width="220">
                                 <Label Content="ゲームポート：" Margin="0,2,0,2" HorizontalAlignment="Left" Width="96"/>
-                                <TextBox x:Name="game_port" ToolTip="ゲームポート" Margin="101,2,10,2" IsEnabled="False"/>
+                                <TextBox x:Name="game_port" ToolTip="ゲームポート" Margin="101,2,10,2"/>
                             </Grid>
                             <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="235,228,0,0" Width="230">
                                 <Label Content="クエリーポート：" Margin="0,2,0,2" HorizontalAlignment="Left"/>
-                                <TextBox x:Name="query_port" ToolTip="クエリーポート" Margin="111,2,0,2" IsEnabled="False"/>
+                                <TextBox x:Name="query_port" ToolTip="クエリーポート" Margin="111,2,0,2"/>
                             </Grid>
                             <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="470,228,0,0" Width="230">
                                 <Label Content="RCONポート：" Margin="0,2,0,2" HorizontalAlignment="Left"/>
