@@ -9,19 +9,11 @@
     <Grid>
         <Label Content="使用できるポートのチェック" Margin="10,10,10,0" Height="26" VerticalAlignment="Top"/>
         <TextBox x:Name="util_log" Margin="10,41,10,35" TextWrapping="Wrap" Text="Select a button..." IsReadOnly="True"/>
-        <Button Margin="10,0,0,10" Click="open_help_port" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="120">
-            <Viewbox>
-                <Label>
-                    使用できるポートについて
-                </Label>
-            </Viewbox>
+        <Button Margin="10,0,0,10" Click="open_help_port" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="120" FontSize="9">
+            使用できるポートについて
         </Button>
-        <Button Margin="135,0,10,10" Click="check_port" Height="20" VerticalAlignment="Bottom">
-            <Viewbox>
-                <Label>
-                    ポートチェック
-                </Label>
-            </Viewbox>
+        <Button Margin="135,0,10,10" Click="check_port" Height="20" VerticalAlignment="Bottom" FontSize="9">
+            ポートチェック
         </Button>
     </Grid>
 </Window>
