@@ -1,0 +1,27 @@
+﻿<Window x:Class="ark_server_utility.can_use_port"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ark_server_utility"
+        mc:Ignorable="d"
+        Title="使えるポート" Height="270" Width="390" MinWidth="390" MaxWidth="390" MinHeight="270" MaxHeight="270" ResizeMode="NoResize">
+    <Grid>
+        <Label Content="使用できるポートのチェック" Margin="10,10,10,0" Height="26" VerticalAlignment="Top"/>
+        <TextBox x:Name="util_log" Margin="10,41,10,35" TextWrapping="Wrap" Text="Select a button..." IsReadOnly="True"/>
+        <Button Margin="10,0,0,10" Click="open_help_port" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="120">
+            <Viewbox>
+                <Label>
+                    使用できるポートについて
+                </Label>
+            </Viewbox>
+        </Button>
+        <Button Margin="135,0,10,10" Click="check_port" Height="20" VerticalAlignment="Bottom">
+            <Viewbox>
+                <Label>
+                    ポートチェック
+                </Label>
+            </Viewbox>
+        </Button>
+    </Grid>
+</Window>

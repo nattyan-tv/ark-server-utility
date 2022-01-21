@@ -218,6 +218,9 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="can_use_port.xaml.cs">
+      <DependentUpon>can_use_port.xaml</DependentUpon>
+    </Compile>
     <Compile Include="status_panel.xaml.cs">
       <DependentUpon>status_panel.xaml</DependentUpon>
     </Compile>
@@ -228,6 +231,10 @@
     <Page Include="App.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="can_use_port.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

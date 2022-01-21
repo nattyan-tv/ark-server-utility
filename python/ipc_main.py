@@ -224,6 +224,8 @@ def binder(client_socket, addr):
                         rt_msg = a2s_check.a2s_info(27092)
                     except TimeoutError:
                         rt_msg = "timeout"
+                    except BaseException as err:
+                        print(err)
                     
 
 

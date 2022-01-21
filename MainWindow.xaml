@@ -23,6 +23,11 @@
                 <MenuItem Header="アンインストール" Click="uninstall_steamCMD"/>
             </MenuItem>
 
+            <MenuItem Header="ネットワーク">
+                <MenuItem Header="グローバルIPチェック" Click="check_globalIP"/>
+                <MenuItem Header="使用可能ポートチェック" Click="launch_check_port"/>
+            </MenuItem>
+
             <!-- でばっぐめにゅう -->
             <MenuItem Header="Debug" Visibility="{x:Static local:visibil.IsDebugVisible}">
                 <MenuItem Header="Start current server" Click="start_debug"/>
