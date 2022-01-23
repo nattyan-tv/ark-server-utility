@@ -121,6 +121,23 @@ namespace ark_server_utility
             ipc_port.Close();
 
             // IPC通信を開始する
+#if DEBUG
+            /// Debugの際に、Pythonスクリプトを直接実行する
+            /// ただし、ツリーがGitHubからcloneしたまま、ビルド設定などを変更してない場合に正常に動作します。
+            var ipc_main = new Process
+            {
+                StartInfo = new ProcessStartInfo("python")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    Arguments = "../../python/ipc_main.py " + port.ToString(),
+                    CreateNoWindow = true
+                }
+            };
+            Console.WriteLine("IPCプログラムを実行します...(Debug)");
+            ipc_main.Start();
+#else
+            // Releaseの時に、pythonフォルダ内のipcプログラムを実行する
             var ipc_main = new Process
             {
                 StartInfo = new ProcessStartInfo("python/ipc_main.exe")
@@ -131,9 +148,9 @@ namespace ark_server_utility
                     CreateNoWindow = true
                 }
             };
-
             Console.WriteLine("IPCプログラムを実行します...");
             ipc_main.Start();
+#endif
             int count = 0;
             while (true)
             {
@@ -881,9 +898,17 @@ namespace ark_server_utility
             }
         }
 
-        private void check_globalIP(object sender, EventArgs e)
+        private void check_network(object sender, EventArgs e)
         {
-            ;
+            string[] arr = IpcConnect("netcheck").Split(',');
+            if (arr[0] == "True")
+            {
+                System.Windows.Forms.MessageBox.Show("ネットワーク：接続中\nグローバルIP：" + arr[1] + "\nローカルIP：" + arr[2], "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+            }
+            else
+            {
+                System.Windows.Forms.MessageBox.Show("ネットワーク：未接続\nグローバルIP：不明\nローカルIP：不明", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+            }
         }
 
         private void launch_check_port(object sender, EventArgs e)

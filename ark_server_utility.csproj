@@ -68,7 +68,7 @@
     <TargetZone>LocalIntranet</TargetZone>
   </PropertyGroup>
   <PropertyGroup>
-    <GenerateManifests>true</GenerateManifests>
+    <GenerateManifests>false</GenerateManifests>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="CoreRCON, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">

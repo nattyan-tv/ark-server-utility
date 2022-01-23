@@ -35,7 +35,7 @@ namespace ark_server_utility
 
         private void open_help_port(object sender, RoutedEventArgs e)
         {
-            MainWindow.OpenUrl("https://nattyan-tv.github.io/ark-server-utility/notes/port");
+            MainWindow.OpenUrl("https://nattyan-tv.github.io/ark-server-utility/note/port");
         }
         private void check_port(object sender, RoutedEventArgs e)
         {

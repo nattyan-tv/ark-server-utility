@@ -24,7 +24,7 @@
             </MenuItem>
 
             <MenuItem Header="ネットワーク">
-                <MenuItem Header="グローバルIPチェック" Click="check_globalIP"/>
+                <MenuItem Header="ネットワークチェック" Click="check_network"/>
                 <MenuItem Header="使用可能ポートチェック" Click="launch_check_port"/>
             </MenuItem>
 
@@ -47,13 +47,30 @@
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
             <Grid Grid.Column="0">
-                <TextBlock x:Name="label_name" Text="サーバー名：Loading..." Margin="15,23,0,0" VerticalAlignment="Top" FontSize="20"/>
-                <TextBlock x:Name="label_map" Text="マップ名：Loading..." Margin="15,60,0,0" VerticalAlignment="Top" FontSize="20"/>
-                <TextBlock x:Name="label_dir" Text="ディレクトリ：Loading..." Margin="15,97,0,0" VerticalAlignment="Top" FontSize="20"/>
-                <Label Content="サーバー選択：" Margin="10,139,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left"/>
+                <Grid>
+                    <TextBlock x:Name="label_name" Text="サーバー名：Loading..." Margin="15,23,0,0" VerticalAlignment="Top" FontSize="20"/>
+                    <TextBlock x:Name="label_map" Text="マップ名：Loading..." Margin="15,60,0,0" VerticalAlignment="Top" FontSize="20"/>
+                    <TextBlock x:Name="label_dir" Text="ディレクトリ：Loading..." Margin="15,97,0,0" VerticalAlignment="Top" FontSize="20"/>
+                    <Label Content="サーバー選択：" Margin="10,139,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left"/>
+                </Grid>
+
+            </Grid>
+            <Grid Grid.ColumnSpan="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0">
+                    <TextBlock x:Name="server_status" Text="ステータス：不明" FontSize="20" Margin="15,189,0,0" VerticalAlignment="Top"/>
+                </Grid>
+                <Grid Grid.Column="1">
+                    <TextBlock x:Name="player_count" Text="人数：不明" FontSize="20" Margin="0,189,0,0" VerticalAlignment="Top"/>
+                </Grid>
+                <Grid Grid.ColumnSpan="2">
+                    <ComboBox x:Name="server_list" Height="37" Margin="143,139,0,0" VerticalAlignment="Top" FontSize="18" IsEnabledChanged="list_changed" SelectionChanged="server_list_SelectionChanged"/>
+                </Grid>
             </Grid>
 
-            <ComboBox x:Name="server_list" Height="37" Margin="143,139,0,0" VerticalAlignment="Top" FontSize="18" IsEnabledChanged="list_changed" SelectionChanged="server_list_SelectionChanged" Grid.Column="0" Grid.ColumnSpan="2"/>
             <Grid Grid.Column="2">
                 <Button x:Name="start_server" Content="サーバーの開始" Margin="10,23,10,0" VerticalAlignment="Top" Height="37" FontSize="20" IsEnabled="False" Click="server_start"/>
                 <Button Content="設定の保存" Margin="10,60,10,0" VerticalAlignment="Top" Height="37" FontSize="20" Click="Button_Click"/>
@@ -66,6 +83,7 @@
                     <Button x:Name="add_list" Grid.Column="0" Content="追加" VerticalAlignment="Top" Height="37" FontSize="20" Click="add_list_bt" Margin="10,139,0,0"/>
                     <Button x:Name="del_list" Grid.Column="1" Content="削除" Margin="0,139,10,0" VerticalAlignment="Top" Height="37" FontSize="20" Click="del_list_Click" RenderTransformOrigin="0.5,0.5"/>
                 </Grid>
+                <Button x:Name="view_server_detail" Content="サーバー情報" Margin="10,184,10,0" VerticalAlignment="Top" Height="37" FontSize="20" Click="install_server_Click"/>
             </Grid>
             <Grid Margin="0,23,0,0" Height="111" VerticalAlignment="Top" Grid.Column="1">
                 <GroupBox Header="バージョン">
@@ -83,7 +101,7 @@
             </Grid>
         </Grid>
         <!-- メインエリア -->
-        <ScrollViewer Margin="0,181,0,37" FontSize="16" Grid.ColumnSpan="2">
+        <ScrollViewer Margin="0,231,0,37" FontSize="16">
             <StackPanel Background="#FFE5E5E5">
                 <Grid Height="305">
                     <GroupBox Header="メイン設定" Margin="10,0,10,10">
