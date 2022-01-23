@@ -395,6 +395,46 @@ namespace ark_server_utility
             this.Close();
         }
 
+        private void show_RCON(object sender ,RoutedEventArgs e)
+        {
+            int pt;
+            bool can = true;
+            string str = Microsoft.VisualBasic.Interaction.InputBox("RCON接続するポート番号を指定してください。", "ARK: Server Utility", "", -1, -1);
+            str = str.Trim();
+            if (str == "")
+            {
+                System.Windows.MessageBox.Show("エラーが発生しました。\nポートは必須事項です。", "ARK Server Utility", MessageBoxButton.OK, MessageBoxImage.Asterisk);
+                can = false;
+            }
+            if (can)
+            {
+                try
+                {
+                    int.Parse(str);
+                }
+                catch
+                {
+                    System.Windows.MessageBox.Show("エラーが発生しました。\nポートは数値のみ入れられます。", "ARK Server Utility", MessageBoxButton.OK, MessageBoxImage.Asterisk);
+                    can = false;
+                }
+                if (can)
+                {
+                    pt = int.Parse(str);
+                    string pw = Microsoft.VisualBasic.Interaction.InputBox("管理者パスワードを指定している場合は入力してください。\n指定していない場合はそのままOKを押してください。", "ARK: Server Utility", "", -1, -1);
+                    pw = pw.Trim();
+                    var rc = new rcon_console(pt, pw);
+                    rc.Show();
+                }
+
+            }
+        }
+
+        private void show_PANEL(object sender, RoutedEventArgs e)
+        {
+            var pn = new status_panel();
+            pn.Show();
+        }
+
         private async void install_steamCMD(object sender, RoutedEventArgs e)
         {
             DialogResult dr = System.Windows.Forms.MessageBox.Show("SteamCMDのインストールには時間がかかります。\n実行してもよろしいですか？", "ARK Server Utility", MessageBoxButtons.OKCancel, MessageBoxIcon.Asterisk);

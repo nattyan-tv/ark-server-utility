@@ -16,6 +16,8 @@
             <MenuItem Header="ファイル">
                 <MenuItem Header="更新を確認" Click="check_update"/>
                 <MenuItem Header="終了" Click="exit_app"/>
+                <MenuItem Header="RCONコンソール" Click="show_RCON"/>
+                <MenuItem Header="サーバーパネル" Click="show_PANEL"/>
             </MenuItem>
             <MenuItem Header="SteamCMD">
                 <MenuItem Header="インストール" Click="install_steamCMD"/>

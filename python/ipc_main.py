@@ -2,6 +2,7 @@ import socket, threading, sys, os
 import http.client as httplib
 import psutil, json, requests, re
 import a2s, datetime
+import mcrcon as rcon
 from timeout_decorator import timeout, TimeoutError
 
 #初回設定書き込み用のダミーデータ
@@ -277,8 +278,16 @@ def main(client_socket, addr):
                         rt_msg = f"False,X,X"
                 except BaseException as err:
                     print(err)
-
-
+            
+            elif msg[0:4] == "rcon":
+                arg = msg[5:].split(",", 2)
+                # [port,password,command]
+                try:
+                    with rcon("localhost", arg[1], arg[0]) as r:
+                        resp = r.command(arg[3])
+                    rt_msg = resp
+                except BaseException as err:
+                    rt_msg = "ERROR:" + err
 
             elif msg[0:8] == "exec_arg":
                 arg = msg[9:].split(" ")
