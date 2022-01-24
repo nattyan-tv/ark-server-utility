@@ -16,7 +16,7 @@ def main():
         for port in range(1, 65535 + 1):
             if port not in set(used_ports):
                 if len(ports) != 0 and ports[-1]+1 == port and cont != 1:
-
+                    ports[-1] = port-2
                     cont_port = port
                     cont = 1
                     continue
