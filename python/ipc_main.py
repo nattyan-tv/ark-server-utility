@@ -1,3 +1,4 @@
+#coding:utf-8
 import socket, threading, sys, os
 import http.client as httplib
 import psutil, json, requests, re

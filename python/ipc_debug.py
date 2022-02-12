@@ -1,3 +1,4 @@
+#coding:utf-8
 from multiprocessing.connection import Client
 import socket, threading
 
