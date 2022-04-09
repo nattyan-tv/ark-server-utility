@@ -33,7 +33,7 @@
             <Label x:Name="label_name" Content="サーバー名：Loading..." Margin="10,23,540,0" VerticalAlignment="Top" FontSize="20"/>
             <Label x:Name="label_map" Content="マップ名：Loading..." Margin="10,60,540,0" VerticalAlignment="Top" FontSize="20"/>
             <Label x:Name="label_dir" Content="ディレクトリ：Loading..." Margin="10,97,540,0" VerticalAlignment="Top" FontSize="20"/>
-            <Button x:Name="start_server" Content="サーバーの開始" Margin="0,23,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" IsEnabled="False"/>
+            <Button x:Name="start_server" Content="サーバーの開始" Margin="0,23,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" IsEnabled="False" Click="start_server_Click"/>
             <Button Content="設定の保存" Margin="0,60,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" Click="Button_Click"/>
             <Button x:Name="install_server" Content="インストール" Margin="0,97,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" Click="install_server_Click"/>
             <Label Content="サーバー選択：" Margin="10,139,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left"/>
@@ -70,11 +70,16 @@
                             </Grid>
                             <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10,228,0,0" Width="220">
                                 <Label Content="ゲームポート：" Margin="0,2,0,2" HorizontalAlignment="Left" Width="96"/>
-                                <PasswordBox x:Name="game_port" ToolTip="ゲームポート" Margin="101,2,10,2" IsEnabled="False"/>
+                                <TextBox x:Name="game_port" ToolTip="ゲームポート" Margin="101,2,10,2" IsEnabled="False"/>
                             </Grid>
                             <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="235,228,0,0" Width="230">
                                 <Label Content="クエリーポート：" Margin="0,2,0,2" HorizontalAlignment="Left"/>
-                                <PasswordBox x:Name="query_port" ToolTip="クエリーポート" Margin="111,2,0,2" IsEnabled="False"/>
+                                <TextBox x:Name="query_port" ToolTip="クエリーポート" Margin="111,2,0,2" IsEnabled="False"/>
+                            </Grid>
+                            <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="470,228,0,0" Width="256">
+                                <Label Content="最大人数：" Margin="0,2,0,2" HorizontalAlignment="Left"/>
+                                <TextBox x:Name="max_players" ToolTip="プレイヤー数" Margin="90,2,26,2" IsEnabled="False"/>
+                                <Label Content="人" Margin="0,2,0,2" HorizontalAlignment="Right"/>
                             </Grid>
                             <ComboBox x:Name="map" Height="31" Margin="92,116,10,0" VerticalAlignment="Top" FontSize="18" SelectedValuePath="Tag" SelectionChanged="map_SelectionChanged">
                                 <ComboBoxItem Content="The Island" Tag="TheIsland"/>

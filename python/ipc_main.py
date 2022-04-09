@@ -147,7 +147,7 @@ def binder(client_socket, addr):
             elif msg[0:8] == "exec_arg":
                 arg = msg[9:].split(" ")
                 # サーバー設定を変える的な（ファイルがなかった場合は作ります・設定ファイルが異常(空)だった場合も色々勝手に変更します・keyが存在しなかった場合は作ります）
-                # edit [NUM] [FILE_TYPE] [KEY] [VALUE]
+                # exec_arg edit [NUM] [FILE_TYPE] [KEY] [VALUE]
                 ## ※FILE_TYPEは1又は2（GameUserSettings.iniとGame.iniを分ける）
                 # OK
                 if arg[0] == "edit":
@@ -161,6 +161,7 @@ def binder(client_socket, addr):
                     else:
                         rt_msg = "unknown_arg(3)"
                     if os.path.isfile(f"{install_dir}{config_dir}{setting_file}") == False:
+                        os.makedirs(f"{install_dir}{config_dir}", exist_ok=True)
                         with open(f"{install_dir}{config_dir}{setting_file}", mode="w") as f:
                             pass
                     with open(f"{install_dir}{config_dir}{setting_file}", mode="r", encoding="utf-8") as f:
@@ -182,6 +183,44 @@ def binder(client_socket, addr):
                     with open(f"{install_dir}{config_dir}{setting_file}", mode="w") as f:
                         f.writelines(datalist)
                     rt_msg = "OK"
+                
+                # サーバー設定を読み込む
+                # exec_arg 0:read 1:[NUM] 2:[FILE_TYPE] 3:[KEY]
+                ## ※FILE_TYPEは1又は2（GameUserSettings.iniとGame.iniを分ける）
+                # [VALUE]
+                elif arg[0] == "read":
+                    try:
+                        with open("settings.json", mode="r", encoding="utf-8") as f:
+                            settings = json.load(f)
+                        install_dir = settings[arg[1]]["dir"]
+                        if arg[2] == "1":
+                            setting_file = "GameUserSettings.ini"
+                        elif arg[2] == "2":
+                            setting_file = "Game.ini"
+                        else:
+                            rt_msg = "unknown_arg(3)"
+                        if os.path.isfile(f"{install_dir}{config_dir}{setting_file}") == False:
+                            os.makedirs(f"{install_dir}{config_dir}", exist_ok=True)
+                            with open(f"{install_dir}{config_dir}{setting_file}", mode="w") as f:
+                                pass
+                        with open(f"{install_dir}{config_dir}{setting_file}", mode="r", encoding="utf-8") as f:
+                            datalist = f.readlines()
+                        if arg[2] == "1" and datalist == [] or arg[2] == "1" and datalist[0] != "[ServerSettings]\n":
+                            datalist.insert(0, "[ServerSettings]\n")
+                        if arg[2] == "2" and datalist == [] or arg[2] == "2" and datalist[0] != "[/script/shootergame.shootergamemode]\n":
+                            datalist.insert(0, "[/script/shootergame.shootergamemode]\n")
+                        with open(f"{install_dir}{config_dir}{setting_file}", mode="w") as f:
+                            f.writelines(datalist)
+                        rt_msg = "None"
+                        for i in datalist:
+                            if re.match(f"{arg[3]}=",i) == None:
+                                continue
+                            else:
+                                rt_msg = i[len(arg[3])+1:]
+                    except BaseException as err:
+                        print(err)
+
+
             
 
             elif msg[0:5] == "debug":
