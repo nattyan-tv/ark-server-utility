@@ -5,54 +5,105 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ark_server_utility"
         mc:Ignorable="d"
-        Title="ARK: Server Utility" Width="1280" Height="720" WindowStartupLocation="Manual" WindowState="Normal" MinWidth="1000" MinHeight="315" Closing="Window_Closing">
+        Title="ARK: Server Utility" Width="1280" Height="720" WindowStartupLocation="Manual" WindowState="Normal" MinWidth="500" MinHeight="315" Closing="Window_Closing">
     <Grid Name="Grid1">
+
         <Grid.RowDefinitions>
             <RowDefinition/>
         </Grid.RowDefinitions>
         <!-- 最上部メニュー -->
-        <Menu VerticalAlignment="Top">
+        <Menu VerticalAlignment="Top" Grid.ColumnSpan="2">
             <MenuItem Header="ファイル">
+                <MenuItem Header="更新を確認" Click="check_update"/>
                 <MenuItem Header="終了" Click="exit_app"/>
+                <MenuItem Header="RCONコンソール" Click="show_RCON"/>
+                <MenuItem Header="サーバーパネル" Click="show_PANEL"/>
             </MenuItem>
             <MenuItem Header="SteamCMD">
                 <MenuItem Header="インストール" Click="install_steamCMD"/>
                 <MenuItem Header="起動" Click="launch_steamCMD"/>
                 <MenuItem Header="アンインストール" Click="uninstall_steamCMD"/>
             </MenuItem>
-            <MenuItem Header="Debug">
+
+            <MenuItem Header="ネットワーク">
+                <MenuItem Header="ネットワークチェック" Click="check_network"/>
+                <MenuItem Header="使用可能ポートチェック" Click="launch_check_port"/>
+            </MenuItem>
+
+            <!-- でばっぐめにゅう -->
+            <MenuItem Header="Debug" Visibility="{x:Static local:visibil.IsDebugVisible}">
                 <MenuItem Header="Start current server" Click="start_debug"/>
                 <MenuItem Header="Connect message" Click="connect_pro"/>
                 <MenuItem Header="Send message (send only)" Click="send_pro"/>
                 <MenuItem Header="Get ipc system pid" Click="get_pid"/>
                 <MenuItem Header="Get ipc address" Click="get_addr"/>
+                <MenuItem Header="Set function 'loop_arg'" Click="set_loop_arg"/>
             </MenuItem>
+
         </Menu>
         <!-- 上部ステータス -->
         <Grid>
-            <Label x:Name="label_name" Content="サーバー名：Loading..." Margin="10,23,540,0" VerticalAlignment="Top" FontSize="20"/>
-            <Label x:Name="label_map" Content="マップ名：Loading..." Margin="10,60,540,0" VerticalAlignment="Top" FontSize="20"/>
-            <Label x:Name="label_dir" Content="ディレクトリ：Loading..." Margin="10,97,540,0" VerticalAlignment="Top" FontSize="20"/>
-            <Button x:Name="start_server" Content="サーバーの開始" Margin="0,23,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" IsEnabled="False" Click="start_server_Click"/>
-            <Button Content="設定の保存" Margin="0,60,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" Click="Button_Click"/>
-            <Button x:Name="install_server" Content="インストール" Margin="0,97,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="252" Click="install_server_Click"/>
-            <Label Content="サーバー選択：" Margin="10,139,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left"/>
-            <ComboBox x:Name="server_list" Height="37" Margin="143,139,283,0" VerticalAlignment="Top" FontSize="18" IsEnabledChanged="list_changed" SelectionChanged="server_list_SelectionChanged">
-            </ComboBox>
-            <Grid Margin="0,23,284,0" HorizontalAlignment="Right" Width="251" Height="111" VerticalAlignment="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0">
+                <Grid>
+                    <TextBlock x:Name="label_name" Text="サーバー名：Loading..." Margin="15,23,0,0" VerticalAlignment="Top" FontSize="20"/>
+                    <TextBlock x:Name="label_map" Text="マップ名：Loading..." Margin="15,60,0,0" VerticalAlignment="Top" FontSize="20"/>
+                    <TextBlock x:Name="label_dir" Text="ディレクトリ：Loading..." Margin="15,97,0,0" VerticalAlignment="Top" FontSize="20"/>
+                    <Label Content="サーバー選択：" Margin="10,139,0,0" VerticalAlignment="Top" FontSize="20" HorizontalAlignment="Left"/>
+                </Grid>
+
+            </Grid>
+            <Grid Grid.ColumnSpan="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0">
+                    <TextBlock x:Name="server_status" Text="ステータス：不明" FontSize="20" Margin="15,189,0,0" VerticalAlignment="Top"/>
+                </Grid>
+                <Grid Grid.Column="1">
+                    <TextBlock x:Name="player_count" Text="人数：不明" FontSize="20" Margin="0,189,0,0" VerticalAlignment="Top"/>
+                </Grid>
+                <Grid Grid.ColumnSpan="2">
+                    <ComboBox x:Name="server_list" Height="37" Margin="143,139,0,0" VerticalAlignment="Top" FontSize="18" IsEnabledChanged="list_changed" SelectionChanged="server_list_SelectionChanged"/>
+                </Grid>
+            </Grid>
+
+            <Grid Grid.Column="2">
+                <Button x:Name="start_server" Content="サーバーの開始" Margin="10,23,10,0" VerticalAlignment="Top" Height="37" FontSize="20" IsEnabled="False" Click="server_start"/>
+                <Button Content="設定の保存" Margin="10,60,10,0" VerticalAlignment="Top" Height="37" FontSize="20" Click="Button_Click"/>
+                <Button x:Name="install_server" Content="インストール" Margin="10,97,10,0" VerticalAlignment="Top" Height="37" FontSize="20" Click="install_server_Click"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="add_list" Grid.Column="0" Content="追加" VerticalAlignment="Top" Height="37" FontSize="20" Click="add_list_bt" Margin="10,139,0,0"/>
+                    <Button x:Name="del_list" Grid.Column="1" Content="削除" Margin="0,139,10,0" VerticalAlignment="Top" Height="37" FontSize="20" Click="del_list_Click" RenderTransformOrigin="0.5,0.5"/>
+                </Grid>
+                <Button x:Name="view_server_detail" Content="サーバー情報" Margin="10,184,10,0" VerticalAlignment="Top" Height="37" FontSize="20" Click="install_server_Click"/>
+            </Grid>
+            <Grid Margin="0,23,0,0" Height="111" VerticalAlignment="Top" Grid.Column="1">
                 <GroupBox Header="バージョン">
                     <Grid Margin="2,0,2,0">
-                        <Label x:Name="latest_version" Content="配信されている最新バージョン：XXX.XX" Margin="0,0,5,62"/>
-                        <Label x:Name="current_version" Content="インスト ールされているバージョン：XXX.XX" Margin="0,31,0,31"/>
+                        <Viewbox  Margin="0,0,0,62">
+                            <Label x:Name="latest_version" Content="配信されている最新バージョン：XXX.XX"/>
+                        </Viewbox>
+                        <Viewbox Margin="0,31,0,31">
+                            <Label x:Name="current_version" Content="インストールされているバージョン：XXX.XX"/>
+                        </Viewbox>
+
                         <Button IsEnabled="False" x:Name="update_bt" Content="情報取得中..." Margin="0,62,0,0"/>
                     </Grid>
                 </GroupBox>
             </Grid>
-            <Button x:Name="add_list" Content="追加" Margin="0,139,136,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="126" Click="add_list_bt"/>
-            <Button x:Name="del_list" Content="削除" Margin="0,139,10,0" VerticalAlignment="Top" Height="37" FontSize="20" HorizontalAlignment="Right" Width="126" Click="del_list_Click"/>
         </Grid>
         <!-- メインエリア -->
-        <ScrollViewer Margin="0,181,0,37" FontSize="16">
+        <ScrollViewer Margin="0,231,0,37" FontSize="16">
             <StackPanel Background="#FFE5E5E5">
                 <Grid Height="305">
                     <GroupBox Header="メイン設定" Margin="10,0,10,10">
@@ -60,21 +111,33 @@
                             <Label Content="サーバー名：" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
                             <TextBox x:Name="server_name" Margin="99,10,10,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="31" ToolTip="サーバーの名前"/>
                             <CheckBox x:Name="server_pass_bool" Content="サーバーにパスワードを付ける" HorizontalAlignment="Left" Margin="10,52,0,0" VerticalAlignment="Top" Click="CheckBox_Checked" IsEnabled="False"/>
-                            <Grid Margin="10,77,594,0" Height="34" VerticalAlignment="Top">
-                                <Label Content="参加用パスワード：" Margin="0,0,0,3" HorizontalAlignment="Left" Width="133"/>
-                                <PasswordBox x:Name="join_pass" ToolTip="サーバーの名前" IsEnabled="False" Margin="133,1,10,2"/>
+
+                            <Grid Margin="10,77,10,156">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Height="34" VerticalAlignment="Center" Grid.Column="0">
+                                    <Label Content="参加用パスワード：" HorizontalAlignment="Left" Width="133"/>
+                                    <PasswordBox x:Name="join_pass" ToolTip="サーバーの名前" IsEnabled="False" Margin="133,0,0,0"/>
+                                </Grid>
+                                <Grid Height="34" VerticalAlignment="Center" Grid.Column="1">
+                                    <Label Content="管理用パスワード：" HorizontalAlignment="Left" Width="133"/>
+                                    <PasswordBox x:Name="admin_pass" ToolTip="管理用のパスワード" Margin="133,0,0,0" IsEnabled="False"/>
+                                </Grid>
                             </Grid>
-                            <Grid Margin="0,77,0,0" Height="34" VerticalAlignment="Top" HorizontalAlignment="Right" Width="594">
-                                <Label Content="管理用パスワード：" Margin="0,0,0,3" HorizontalAlignment="Left" Width="133"/>
-                                <PasswordBox x:Name="admin_pass" ToolTip="管理用のパスワード" Margin="133,1,10,2" IsEnabled="False"/>
-                            </Grid>
+
                             <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10,228,0,0" Width="220">
                                 <Label Content="ゲームポート：" Margin="0,2,0,2" HorizontalAlignment="Left" Width="96"/>
-                                <TextBox x:Name="game_port" ToolTip="ゲームポート" Margin="101,2,10,2" IsEnabled="False"/>
+                                <TextBox x:Name="game_port" ToolTip="ゲームポート" Margin="101,2,10,2"/>
                             </Grid>
                             <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="235,228,0,0" Width="230">
                                 <Label Content="クエリーポート：" Margin="0,2,0,2" HorizontalAlignment="Left"/>
-                                <TextBox x:Name="query_port" ToolTip="クエリーポート" Margin="111,2,0,2" IsEnabled="False"/>
+                                <TextBox x:Name="query_port" ToolTip="クエリーポート" Margin="111,2,0,2"/>
+                            </Grid>
+                            <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="470,228,0,0" Width="230">
+                                <Label Content="RCONポート：" Margin="0,2,0,2" HorizontalAlignment="Left"/>
+                                <TextBox x:Name="rcon_port" ToolTip="RCONポートを指定します" Margin="104,2,0,2" IsEnabled="False"/>
                             </Grid>
                             <Grid Height="34" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="470,228,0,0" Width="256">
                                 <Label Content="最大人数：" Margin="0,2,0,2" HorizontalAlignment="Left"/>
@@ -96,11 +159,15 @@
                                 <ComboBoxItem Content="MODマップ..." Tag="Custom"/>
                             </ComboBox>
                             <Grid Margin="10,152,10,81">
-                                <Grid Height="34" VerticalAlignment="Center" Margin="0,0,606,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Height="34" VerticalAlignment="Center" Grid.Column="0">
                                     <Label Content="MODマップ名：" HorizontalAlignment="Left" Width="115"/>
                                     <TextBox x:Name="custom_map_name" ToolTip="マップ名" IsEnabled="False" Margin="115,0,0,0"/>
                                 </Grid>
-                                <Grid Height="34" VerticalAlignment="Center" HorizontalAlignment="Right" Width="600">
+                                <Grid Height="34" VerticalAlignment="Center" Grid.Column="1">
                                     <Label Content="MODマップID：" HorizontalAlignment="Left" Width="114"/>
                                     <TextBox x:Name="map_id" ToolTip="マップID" IsEnabled="False" Margin="119,0,0,0"/>
                                 </Grid>
@@ -134,7 +201,7 @@
                                 <Label Content="・説明" Height="30" Margin="0,100,0,270"/>
                                 <TextBox FontSize="14" x:Name="arg_detail" Width="295" Height="120" Margin="0,135,0,145" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Visible"/>
                                 <Label Content="・値" Height="30" Margin="0,260,0,110" HorizontalAlignment="Right" Width="294"/>
-                                <TextBox Height="30" Margin="0,295,0,75"/>
+                                <TextBox Height="30" x:Name="arg_value" Margin="0,295,0,75"/>
                                 <Button Margin="0,357,0,0" Content="更新" Click="arg_setting_change" />
                             </Grid>
                         </Grid>
@@ -143,7 +210,7 @@
             </StackPanel>
         </ScrollViewer>
         <!-- 下のステータスバー -->
-        <StatusBar Margin="0,0,0,0" Height="40" VerticalAlignment="Bottom">
+        <StatusBar Margin="0,0,0,0" Height="40" VerticalAlignment="Bottom" Grid.ColumnSpan="2">
             <ProgressBar x:Name="main_pbar" Width="200" Height="20" Value="0"/>
             <Separator/>
             <Label x:Name="main_ptext" Content="ARK Server Utility起動中..."/>

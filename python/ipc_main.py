@@ -1,23 +1,93 @@
+#coding:utf-8
 import socket, threading, sys, os
+import http.client as httplib
 import psutil, json, requests, re
+import a2s, datetime
+import mcrcon as rcon
+from timeout_decorator import timeout, TimeoutError
 
 #初回設定書き込み用のダミーデータ
 first_setting = dict()
 first_setting["value"] = 1
-first_setting["1"] = {"name":"Server1","map":"Ragnarok","dir":"servers/s1"}
+
+first_setting["1"] = {
+    "name":"server1",
+    "map":"TheIsland",
+    "dir":"C:\\",
+    "query":27015,
+    "game":7777
+}
 
 # 設定ファイルの場所
 config_dir = "\\ShooterGame\\Saved\\Config\\WindowsServer\\"
 
+print("""###################################
+IPC Connector (Server)
+for ARK: Server Utility
+Author: nattyan-tv
+###################################
+""")
 
-def binder(client_socket, addr):
+
+class a2s_check():
+    """a2s(SteamのサーバーAPI)の情報を取得します。
+    """
+
+    @timeout(5)
+    def a2s_info(port: int, info: str) -> str:
+        """サーバーの情報を取得して、指定された情報を返します。
+        """
+        result = a2s.info(("localhost", port))
+        return f"{result[info]}"
+    
+    @timeout(5)
+    def a2s_player(port: int) -> str:
+        """サーバーのプレイヤー数を取得します。
+        """
+        result = a2s.players(("localhost", port))
+        for i in range(len(result)):
+            if result[i].name == "":
+                continue
+            return f"{result[i].name}" + "-" + f"{int(result[i].duration / 60 // 60)}h{int(result[i].duration / 60 % 60)}m{int(result[i].duration % 60)}s"
+
+class net_check():
+    """ネットワークのチェックを行います。
+    """
+
+    def check_connection() -> bool:
+        """ネットワークに接続されているかを、Googleサーバーに接続することで確認します。
+        """
+        connection = httplib.HTTPConnection("www.google.com", timeout=5)
+        try:
+            connection.request("HEAD", "/")
+            connection.close()
+            return True
+        except BaseException:
+            return False
+
+    def global_ip() -> str:
+        """inet-ip.infoからグローバルIPを取得します。
+        """
+        url = requests.get("http://inet-ip.info/json")
+        text = url.text
+        data = json.loads(text)
+        return data["IP"]
+    
+    def private_ip() -> str:
+        """socketで、プライベートIPを取得します。
+        """
+        return str(socket.gethostbyname(socket.gethostname()))
+
+
+def main(client_socket, addr):
+    global latest_game_version
     try:
         while True:
             data = client_socket.recv(4)
             length = int.from_bytes(data, "big")
             data = client_socket.recv(length)
             msg = data.decode()
-            print([msg])
+            print(f"recv[{datetime.datetime.now()}]> {msg}")
             rt_msg = msg
 
 
@@ -61,43 +131,47 @@ def binder(client_socket, addr):
 
                 # サーバーの設定を呼び出す
                 # settings read [NUM]
-                # [サーバー名],[サーバーマップ],[サーバーディレクトリ]
+                # [サーバー名]?[サーバーマップ]?[サーバーディレクトリ]?[クエリ―ポート]?[ゲームポート]
                 elif msg[9:13] == "read":
                     arg = msg[14:].split(" ")
                     with open("settings.json", mode="r", encoding="utf-8") as f:
                         settings = json.load(f)
                     if int(settings["value"]) < int(arg[0]):
                         rt_msg = "over"
-                    rt_msg = f'{settings[arg[0]]["name"]},{settings[arg[0]]["map"]},{settings[arg[0]]["dir"]}'
+                    rt_msg = f'{settings[arg[0]]["name"]}?{settings[arg[0]]["map"]}?{settings[arg[0]]["dir"]}?{settings[arg[0]]["query"]}?{settings[arg[0]]["game"]}'
                 
                 # サーバーの設定を追記する
-                # settings write [NAME] [MAP] [DIR]
+                # settings write [NAME]?[MAP]?[DIR]?[QUERY]?[GAME]
                 # OK
                 elif msg[9:14] == "write":
-                    arg = msg[15:].split(" ")
+                    arg = msg[15:].split("?")
                     with open("settings.json", mode="r", encoding="utf-8") as f:
                         settings = json.load(f)
                     settings["value"] = settings["value"] + 1
                     settings[f"{settings['value']}"] = {
                             "name":arg[0],
                             "map":arg[1],
-                            "dir":arg[2]
+                            "dir":arg[2],
+                            "query":arg[3],
+                            "game":arg[4]
                         }
                     with open("settings.json", mode='w', encoding="utf-8") as f:
                         json.dump(settings, f, ensure_ascii=False, indent=4)
                     rt_msg = "OK"
 
                 # サーバーの設定を編集する
-                # settings edit [NUM] [NAME] [MAP] [DIR]
+                # settings edit [NUM]?[NAME]?[MAP]?[DIR]?[QUERY]?[GAME]
                 # OK
                 elif msg[9:13] == "edit":
-                    arg = msg[14:].split(" ")
+                    arg = msg[14:].split("?")
                     with open("settings.json", mode="r", encoding="utf-8") as f:
                         settings = json.load(f)
                     settings[str(arg[0])] = {
                             "name":arg[1],
                             "map":arg[2],
-                            "dir":arg[3]
+                            "dir":arg[3],
+                            "query":arg[4],
+                            "game":arg[5],
                         }
                     with open("settings.json", mode='w', encoding="utf-8") as f:
                         json.dump(settings, f, ensure_ascii=False, indent=4)
@@ -108,13 +182,19 @@ def binder(client_socket, addr):
                 # OK
                 elif msg[9:12] == "del":
                     num = msg[13:]
-                    with open("settings.json", mode="r", encoding="utf-8") as f:
-                        settings = json.load(f)
-                    settings["value"] = settings["value"] - 1
-                    del settings[str(num)]
-                    with open("settings.json", mode='w', encoding="utf-8") as f:
-                        json.dump(settings, f, ensure_ascii=False, indent=4)
-                    rt_msg = "OK"
+                    try:
+                        with open("settings.json", mode="r", encoding="utf-8") as f:
+                            settings = json.load(f)
+                        settings["value"] = settings["value"] - 1
+                        for i in range(int(settings["value"]) - int(num)):
+                            settings[f"{int(num) + i}"] = settings[f"{int(num) + i + 1}"]
+                        del settings[f"{settings['value']+1}"]
+                        print(settings)
+                        with open("settings.json", mode='w', encoding="utf-8") as f:
+                            json.dump(settings, f, ensure_ascii=False, indent=4)
+                        rt_msg = "OK"
+                    except BaseException as err:
+                        print(err)
 
 
 
@@ -127,22 +207,88 @@ def binder(client_socket, addr):
                     url = "http://arkdedicated.com/version"
                     req = requests.get(url)
                     version = req.json()
+                    latest_game_version = version
                     rt_msg = version
 
                 # 最新バージョンと現行バージョンを取得
-                # webapi version [NUM]
-                # [配信されているバージョン],[インストールされているバージョン]
-                elif arg[0] == "version" and arg[1] != "0":
+                # webapi version 1 [NUM]
+                # [配信されているバージョン(XXX.XX)],[インストールされているバージョン(XXX.XX)]
+                elif arg[0] == "version" and arg[1] == "1":
                     url = "http://arkdedicated.com/version"
                     req = requests.get(url)
                     latest_version = req.json()
                     with open("settings.json", mode="r", encoding="utf-8") as f:
                         settings = json.load(f)
-                    locate = settings[str(arg[1])]["dir"]
+                    locate = settings[str(arg[2])]["dir"]
                     with open(locate + "\\version.txt", mode="r", encoding="utf-8") as f:
                         current_version = f.read()
+                    latest_game_version = latest_version
                     rt_msg = f"{latest_version},{current_version}"
-
+                
+                # 現行バージョンと、キャッシュから最新バージョンを取得
+                # webapi version 2 [NUM]
+                # [ASU起動時に取得された最新バージョン],[インストールされているバージョン]
+                elif arg[0] == "version" and arg[1] == "2":
+                    with open("settings.json", mode="r", encoding="utf-8") as f:
+                        settings = json.load(f)
+                    locate = settings[str(arg[2])]["dir"]
+                    with open(locate + "\\version.txt", mode="r", encoding="utf-8") as f:
+                        current_version = f.read()
+                    rt_msg = f"{latest_game_version},{current_version}"
+                
+                # キャッシュから最新バージョンを取得
+                # webapi version 3
+                # [ASU起動時に取得された最新バージョン]
+                elif arg[0] == "version" and arg[1] == "3":
+                    try:
+                        rt_msg = latest_game_version
+                    except BaseException as err:
+                        print(err)
+                
+                # ARK: Server Utilityのバージョン情報を取得
+                # webapi system
+                # [GitHubに公開されている最新バージョン]
+                elif arg[0] == "system":
+                    try:
+                        url = requests.get("https://nattyan-tv.github.io/ark-server-utility/pages/info.json")
+                        text = url.text
+                        data = json.loads(text)
+                        rt_msg = data["version"]
+                    except BaseException as err:
+                        rt_msg = f"ERR:{err}"
+                
+                # a2sでサーバー情報を取得する
+                # webapi a2s-info [NUM]
+                # [TIMED OUT]or[a2s server info]
+                elif arg[0] == "a2s-info":
+                    try:
+                        rt_msg = a2s_check.a2s_info(27092)
+                    except TimeoutError:
+                        rt_msg = "timeout"
+                    except BaseException as err:
+                        print(err)
+            
+            elif msg == "netcheck":
+                # ネットワークの接続状態を確認し、送信する
+                # netcheck
+                # [接続状況],[グローバルIP],[プライベートIP]
+                try:
+                    if net_check.check_connection() == True:
+                        rt_msg = f"True,{net_check.global_ip()},{net_check.private_ip()}"
+                    else:
+                        rt_msg = f"False,X,X"
+                except BaseException as err:
+                    print(err)
+            
+            elif msg[0:4] == "rcon":
+                arg = msg[5:].split(",", 2)
+                # [port,password,command]
+                try:
+                    with rcon("localhost", arg[1], arg[0]) as r:
+                        resp = r.command(arg[3])
+                    rt_msg = resp
+                except BaseException as err:
+                    rt_msg = "ERROR:" + err
 
             elif msg[0:8] == "exec_arg":
                 arg = msg[9:].split(" ")
@@ -235,7 +381,7 @@ def binder(client_socket, addr):
                 pass
             
 
-            print([rt_msg])
+            print(f"send[{datetime.datetime.now()}]> {rt_msg}")
             data = str(rt_msg).encode()
             length = len(data)
             client_socket.sendall(length.to_bytes(4, byteorder='big'))
@@ -246,10 +392,12 @@ def binder(client_socket, addr):
         client_socket.close()
 
 
+
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        print("Port:None")
+        print("Couldn't read port.\npython ipc_main.py [port]")
         sys.exit(0)
+    print("アドレス[localhost:" + sys.argv[1] + "]")
     for p in psutil.process_iter(attrs=('name', 'pid', 'cmdline')):
         if p.info["name"] == "ipc_main.exe" and p.info["pid"] != os.getpid():
             p.terminate()
@@ -257,13 +405,14 @@ if __name__ == "__main__":
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     server_socket.bind(('', int(sys.argv[1])))
-    print("Port:" + sys.argv[1])
     server_socket.listen()
+    print("Clientの接続待機中です...")
 
     try:
         while True:
             client_socket, addr = server_socket.accept()
-            th = threading.Thread(target=binder, args = (client_socket,addr))
+            print(f"接続が確立されました。[{datetime.datetime.now()}]")
+            th = threading.Thread(target=main, args = (client_socket,addr))
             th.start()
     except:
         pass

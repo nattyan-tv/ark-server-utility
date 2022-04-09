@@ -20,7 +20,7 @@ namespace ark_server_utility
             {
                 if (!created_new)
                 {
-                    MessageBox.Show("既に実行されています。", "ARK Server Utility", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("ARK Server Utilityのインスタンスは同時に1つしか実行できません。\n実行するには他のインスタンスを終了させてください。", "ARK Server Utility", MessageBoxButton.OK, MessageBoxImage.Error);
                     Environment.Exit(1);
                     return;
                 }

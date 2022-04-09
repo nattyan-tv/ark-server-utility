@@ -14,28 +14,36 @@ using System.Text;
 using System.Net.Sockets;
 using System.Management;
 using System.Threading;
-
+using CoreRCON;
+using SteamQueryNet.Interfaces;
 
 namespace ark_server_utility
 {
     /// <summary>
     /// MainWindow.xaml の相互作用ロジック
     /// </summary>
+
+
+
     public partial class MainWindow : Window
     {
         private List<arg_data> args = new List<arg_data>();
 
-
         /// ARK: Server Utilityのバージョン
-        /// v[メジャー].[マイナー].[適当]
-        public string version = "v0.9.1";
-
+        /// v[メジャー].[マイナー].[ビルド]
+        public static string version = "0.9.1";
 
         // グローバルでポートを入れる変数
-        public int port;
+        public static int port;
+
+        // 設定が変更された的な変数
+        public int set_changed = 0;
+
+        // サーバーステータス処理に渡す変数
+        public static string loop_arg = "";
 
         // IPC通信で、出力を返す
-        public string IpcConnect(string text)
+        public static string IpcConnect(string text)
         {
             using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
             {
@@ -50,11 +58,10 @@ namespace ark_server_utility
                 client.Receive(data, data.Length, SocketFlags.None);
                 return Encoding.UTF8.GetString(data);
             }
-
         }
 
-        // IPC通信で、出力を変えさない
-        public void IpcSend(string text)
+        // IPC通信で、出力を返さない
+        public static void IpcSend(string text)
         {
             using (Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
             {
@@ -66,9 +73,32 @@ namespace ark_server_utility
             }
         }
 
+        // RCON接続(Pythonに移すかも)
+        static async Task rcon_command(ushort port, string command, string password)
+        {
+            var connection = new RCON(host:IPAddress.Parse("127.0.0.1"), port:port,password:password);
+            var result = await connection.SendCommandAsync(command);
+            Console.WriteLine(result);
+        }
+
+        public static Process OpenUrl(string url)
+        {
+            ProcessStartInfo ou = new ProcessStartInfo()
+            {
+                FileName = url,
+                UseShellExecute = true,
+            };
+
+            return Process.Start(ou);
+        }
+
+
+        /// <summary>
+        /// 起動時に実行されるメインスクリプト
+        /// </summary>
         public MainWindow()
         {
-
+            
             // 辞書形式を宣言
             var dict = new Dictionary<string, List<string>>();
 
@@ -77,6 +107,7 @@ namespace ark_server_utility
             {
                 StartInfo = new ProcessStartInfo("python/search_port.exe")
                 {
+                    Arguments = "1",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     CreateNoWindow = true
@@ -85,11 +116,28 @@ namespace ark_server_utility
             ipc_port.Start();
             StreamReader port_num = ipc_port.StandardOutput;
             port = int.Parse(port_num.ReadLine());
-            Console.WriteLine("Port for IPC Connection:" + port);
+            Console.WriteLine("IPC通信用のポート:" + port);
             ipc_port.WaitForExit();
             ipc_port.Close();
 
             // IPC通信を開始する
+#if DEBUG
+            /// Debugの際に、Pythonスクリプトを直接実行する
+            /// ただし、ツリーがGitHubからcloneしたまま、ビルド設定などを変更してない場合に正常に動作します。
+            var ipc_main = new Process
+            {
+                StartInfo = new ProcessStartInfo("python")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    Arguments = "../../python/ipc_main.py " + port.ToString(),
+                    CreateNoWindow = true
+                }
+            };
+            Console.WriteLine("IPCプログラムを実行します...(Debug)");
+            ipc_main.Start();
+#else
+            // Releaseの時に、pythonフォルダ内のipcプログラムを実行する
             var ipc_main = new Process
             {
                 StartInfo = new ProcessStartInfo("python/ipc_main.exe")
@@ -100,18 +148,19 @@ namespace ark_server_utility
                     CreateNoWindow = true
                 }
             };
-
             Console.WriteLine("IPCプログラムを実行します...");
             ipc_main.Start();
+#endif
             int count = 0;
             while (true)
             {
                 count++;
                 if (count == 11)
                 {
-                    System.Windows.Forms.MessageBox.Show("IPC通信が確立されませんでした。\nファイアーウォールの設定などを確認してください。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                    System.Windows.Forms.MessageBox.Show("IPC通信が確立されませんでした。\nファイアーウォールの設定などを確認してください。\n(0x02)", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
                     ipc_main.Close();
-                    this.Close();
+                    Environment.Exit(2);
+                    return;
                 }
                 try
                 {
@@ -128,8 +177,10 @@ namespace ark_server_utility
             }
 
 
-            // XAMLとかなんとか...
+            /// XAMLとかなんとか...
+            /// このコードより上に書くGUIの設定項目は基本的に無視される（らしい）
             InitializeComponent();
+            server_list.MouseWheel += server_list_wheeled;
 
             // 起動オプションの引数をぉおお！！！ここにぃいいい！！！つっこむうぅうう！！！ぜんぶうぅうううう！！（地獄）
 
@@ -194,10 +245,27 @@ namespace ark_server_utility
             if (!File.Exists(@"settings.json"))
             {
                 IpcSend("settings first");
+                while (true)
+                {
+                    Thread.Sleep(50);
+                    if (File.Exists(@"settings.json"))
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+                Thread.Sleep(1000);
             }
-            string[] arr = IpcConnect("settings read 1").Split(',');
-            label_name.Content = "サーバー名：" + arr[0];
-            label_dir.Content = "ディレクトリ：" + arr[2];
+            string f_r = IpcConnect("settings read 1");
+            Console.WriteLine(f_r);
+            string[] arr = f_r.Split('?');
+            label_name.Text = "サーバー名：" + arr[0];
+            label_dir.Text = "ディレクトリ：" + arr[2];
+            query_port.Text = arr[3];
+            game_port.Text = arr[4];
 
 
             string value = IpcConnect("settings value");
@@ -222,17 +290,19 @@ namespace ark_server_utility
                 install_server.Content = "インストール";
                 string version = IpcConnect("webapi version 0");
                 latest_version.Content = "配信されている最新バージョン：" + version;
+                current_version.Content = "インストールされていません。";
+                update_bt.Content = "アップデート";
             }
             else
             {
                 // サーバーデータがインストールされている場合の処理
                 start_server.IsEnabled = true;
                 install_server.Content = "アンインストール";
-                string version = IpcConnect("webapi version 1");
-                Console.WriteLine(version);
+                string version = IpcConnect("webapi version 1 1");
+                Console.WriteLine("バージョン:[" + version + "]");
                 string[] vers = version.Split(',');
                 latest_version.Content = "配信されている最新バージョン：" + vers[0];
-                current_version.Content = "インストールされているバージョン：" + vers[1];
+                current_version.Content = "インストールされているバージョン：" + vers[1].Replace("\r", "").Replace("\n", "");
                 update_bt.IsEnabled = true;
 
                 if(float.Parse(vers[0]) > float.Parse(vers[1]))
@@ -306,8 +376,10 @@ namespace ark_server_utility
 
 
             }
+            /// 「ServerName,MapName,Directory」
+            /// 「nattyantv,TheIsland,C:\\」
             server_name.Text = arr[0];
-            Console.WriteLine(arr[1].Contains("Custom/"));
+            Console.WriteLine(arr[1]);
             if (arr[1].Contains("Custom/") == false)
             {
                 map.SelectedValue = arr[1];
@@ -315,7 +387,7 @@ namespace ark_server_utility
                 custom_map_name.Text = "";
                 map_id.IsEnabled = false;
                 map_id.Text = "";
-                label_map.Content = "マップ名：" + arr[1];
+                label_map.Text = "マップ名：" + arr[1];
             }
             else
             {
@@ -326,24 +398,150 @@ namespace ark_server_utility
                 custom_map_name.Text = vs[1];
                 map_id.IsEnabled = true;
                 map_id.Text = vs[2];
-                label_map.Content = "マップ名：" + vs[1];
+                label_map.Text = "マップ名：" + vs[1];
             }
-            
+
+
             server_dir.Text = arr[2];
             server_list.Text = arr[0];
             main_pbar.Value = 100;
             main_ptext.Content = "ARK: Server Utility " + version;
             Console.WriteLine("\n####################\n\nARK: Server Utility \nVersion:" + version + "\nCreated by: nattyan-tv\n\n####################\n");
+            Thread status_loader = new Thread(new ThreadStart(() =>
+            {
+                status_loop();
+            }));
+            loop_arg = "server:1";
+            status_loader.Start();
         }
+
+        // ステータス表示用の非同期処理
+        public static void status_loop()
+        {
+            // int loop_i = 0;
+            
+            // string result;
+            for(;;)
+            {
+                if (loop_arg == "exit")
+                {
+                    return;
+                } 
+                else if (loop_arg == "skip")
+                {
+                    ;
+                }
+                else if (loop_arg.Contains("server:"))
+                {
+                    var result = IpcConnect("webapi a2s-info " + loop_arg.Substring(7));
+                    Console.WriteLine(result);
+                }
+                Thread.Sleep(2000);
+                
+            }
+            
+        }
+
+        /// <summary>
+        /// デバッグ用メニューのコード達
+        /// </summary>
+
         private void start_debug(object sender, RoutedEventArgs e)
         {
             ProcessStartInfo processStartInfo = new ProcessStartInfo(@server_dir.Text + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe", map.Text + "?listen?SessionName=" + server_name.Text + "?ServerPassword=" + join_pass.Password + "?ServerAdminPassword=" + admin_pass.Password + "?Port=7777?QueryPort=27015?MaxPlayers=3");
             Process.Start(processStartInfo);
         }
+
+        private void connect_pro(object sender, EventArgs e)
+        {
+            string rt = IpcConnect(server_name.Text);
+            System.Windows.Forms.MessageBox.Show("・返り値\n" + rt, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+        }
+
+        private void send_pro(object sender, EventArgs e)
+        {
+            IpcSend(server_name.Text);
+        }
+
+        private void get_pid(object sender, EventArgs e)
+        {
+            string pid = IpcConnect("debug pid");
+            System.Windows.Forms.MessageBox.Show("プロセスID:" + pid, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+        }
+
+        private void get_addr(object sender, EventArgs e)
+        {
+            string addr = IpcConnect("debug addr");
+            System.Windows.Forms.MessageBox.Show("アドレス:" + addr, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+        }
+        private void set_loop_arg(object sender, EventArgs e)
+        {
+            loop_arg = server_name.Text;
+        }
+
+        /// <summary>
+        /// デバッグメニュー終わり
+        /// </summary>
+        /// 
+
+        private void server_list_wheeled(object sender, EventArgs e)
+        {
+            Console.WriteLine("Wheeled");
+            HandledMouseEventArgs wEventArgs = e as HandledMouseEventArgs;
+            wEventArgs.Handled = true;
+        }
+
+        private void check_update(object sender, RoutedEventArgs e)
+        {
+            var uc = new update_checker();
+            uc.Show();
+        }
+
         private void exit_app(object sender, RoutedEventArgs e)
         {
             this.Close();
         }
+
+        private void show_RCON(object sender ,RoutedEventArgs e)
+        {
+            int pt;
+            bool can = true;
+            string str = Microsoft.VisualBasic.Interaction.InputBox("RCON接続するポート番号を指定してください。", "ARK: Server Utility", "", -1, -1);
+            str = str.Trim();
+            if (str == "")
+            {
+                System.Windows.MessageBox.Show("エラーが発生しました。\nポートは必須事項です。", "ARK Server Utility", MessageBoxButton.OK, MessageBoxImage.Asterisk);
+                can = false;
+            }
+            if (can)
+            {
+                try
+                {
+                    int.Parse(str);
+                }
+                catch
+                {
+                    System.Windows.MessageBox.Show("エラーが発生しました。\nポートは数値のみ入れられます。", "ARK Server Utility", MessageBoxButton.OK, MessageBoxImage.Asterisk);
+                    can = false;
+                }
+                if (can)
+                {
+                    pt = int.Parse(str);
+                    string pw = Microsoft.VisualBasic.Interaction.InputBox("管理者パスワードを指定している場合は入力してください。\n指定していない場合はそのままOKを押してください。", "ARK: Server Utility", "", -1, -1);
+                    pw = pw.Trim();
+                    var rc = new rcon_console(pt, pw);
+                    rc.Show();
+                }
+
+            }
+        }
+
+        private void show_PANEL(object sender, RoutedEventArgs e)
+        {
+            var pn = new status_panel();
+            pn.Show();
+        }
+
         private async void install_steamCMD(object sender, RoutedEventArgs e)
         {
             DialogResult dr = System.Windows.Forms.MessageBox.Show("SteamCMDのインストールには時間がかかります。\n実行してもよろしいですか？", "ARK Server Utility", MessageBoxButtons.OKCancel, MessageBoxIcon.Asterisk);
@@ -363,6 +561,7 @@ namespace ark_server_utility
                 return;
             }
             WebClient mywebClient = new WebClient();
+            mywebClient.DownloadFile("https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip", @"SteamCMD\\steamcmd.zip");
             try
             {
                 ZipFile.ExtractToDirectory(@"SteamCMD\\steamcmd.zip", @"SteamCMD");
@@ -373,21 +572,31 @@ namespace ark_server_utility
             }
             await Task.Delay(1000);
             File.Delete(@"SteamCMD\\steamcmd.zip");
-            ProcessStartInfo processStartInfo = new ProcessStartInfo(@"SteamCMD\\steamcmd.exe", "+quit");
-            Process steamcmd_installer = Process.Start(processStartInfo);
-            steamcmd_installer.WaitForExit();
-            int exitCode = steamcmd_installer.ExitCode;
-            steamcmd_installer.Close();
-            Console.WriteLine("SteamCMDのインストールステータス：" + exitCode);
-            if (exitCode == 7)
+            try
             {
-                System.Windows.Forms.MessageBox.Show("SteamCMDのインストールが完了しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                ProcessStartInfo processStartInfo = new ProcessStartInfo(@"SteamCMD\\steamcmd.exe", "+quit");
+                Process steamcmd_installer = Process.Start(processStartInfo);
+                steamcmd_installer.WaitForExit();
+                int exitCode = steamcmd_installer.ExitCode;
+                steamcmd_installer.Close();
+                Console.WriteLine("SteamCMDのインストールステータス：" + exitCode);
+                if (exitCode == 7)
+                {
+                    System.Windows.Forms.MessageBox.Show("SteamCMDのインストールが完了しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                }
+                else
+                {
+                    System.Windows.Forms.MessageBox.Show("SteamCMDのインストール作業が中断されたか、正常にインストールできませんでした。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                }
             }
-            else
+            catch (Exception err)
             {
-                System.Windows.Forms.MessageBox.Show("SteamCMDのインストール作業が中断されたか、正常にインストールできませんでした。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                Console.WriteLine(err);
+                System.Windows.Forms.MessageBox.Show("SteamCMDのインストール作業中にエラーが発生しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Hand);
             }
+            
         }
+
         private void launch_steamCMD(object sender, RoutedEventArgs e)
         {
             if (Directory.Exists(@"SteamCMD") == false)
@@ -403,6 +612,7 @@ namespace ark_server_utility
             ProcessStartInfo processStartInfo = new ProcessStartInfo(@"SteamCMD\\steamcmd.exe");
             Process.Start(processStartInfo);
         }
+
         private void uninstall_steamCMD(object sender, RoutedEventArgs e)
         {
             DialogResult dr = System.Windows.Forms.MessageBox.Show("SteamCMDをアンインストールしてもよろしいですか？", "ARK Server Utility", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation);
@@ -439,12 +649,28 @@ namespace ark_server_utility
             {
                 join_pass.IsEnabled = true;
             }
+            // set_changed = 1;
         }
 
+        // 設定保存
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            label_name.Content = "サーバー名：" + server_name.Text;
-            label_dir.Content = "ディレクトリ：" + server_dir.Text;
+            if (map.SelectedValue.ToString() == "Custom")
+            {
+                if (custom_map_name.Text == "" || map_id.Text == "")
+                {
+                    System.Windows.Forms.MessageBox.Show("マップをカスタムマップにする場合は、「マップ名」と「マップID」が必要です。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    return;
+                }
+            }
+            server_name.Text = server_name.Text.Replace(" ", "_").Replace("?", "_");
+            Console.WriteLine(server_name.Text);
+            label_name.Text = "サーバー名：" + server_name.Text;
+            label_dir.Text = "ディレクトリ：" + server_dir.Text;
+            server_list.Items.Insert(server_list.SelectedIndex+1, server_name.Text);
+            server_list.Items.RemoveAt(server_list.SelectedIndex);
+
+            Console.WriteLine(server_name.Text);
             string rs;
             Console.WriteLine(map.SelectedValue);
             if (File.Exists(@server_dir.Text + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe") == true)
@@ -457,15 +683,20 @@ namespace ark_server_utility
             }
                 if (map.SelectedValue.ToString() == "Custom")
             {
-                label_map.Content = "マップ名：" + custom_map_name.Text;
-                rs = IpcConnect("settings edit 1 " + server_name.Text + " Custom/" + custom_map_name.Text + "/" + map_id.Text + " " + server_dir.Text);
+                label_map.Text = "マップ名：" + custom_map_name.Text;
+                rs = IpcConnect("settings edit 1?" + server_name.Text + "?Custom/" + custom_map_name.Text + "/" + map_id.Text + "?" + server_dir.Text + "?" + query_port.Text + "?" + game_port.Text);
             }
             else
             {
-                label_map.Content = "マップ名：" + map.Text;
-                rs = IpcConnect("settings edit 1 " + server_name.Text + " " + map.SelectedValue + " " + server_dir.Text);
+
+                Console.WriteLine(server_name.Text);
+                label_map.Text = "マップ名：" + map.Text;
+                rs = IpcConnect("settings edit 1?" + server_name.Text + "?" + map.SelectedValue + "?" + server_dir.Text + "?" + query_port.Text + "?" + game_port.Text);
             }
             Console.WriteLine(rs);
+
+            server_list.Text = server_name.Text;
+            Console.WriteLine(server_name.Text);
             if (rs != "OK")
             {
                 System.Windows.Forms.MessageBox.Show("設定保存時にエラーが発生しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -473,6 +704,7 @@ namespace ark_server_utility
             else
             {
                 System.Windows.Forms.MessageBox.Show("保存しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                // set_changed = 0;
             }
             
         }
@@ -487,7 +719,7 @@ namespace ark_server_utility
                     return;
                 }
                 /// サーバーが起動している場合は終了する的な処理を。
-                string[] arr = IpcConnect("settings read 1").Split(',');
+                string[] arr = IpcConnect("settings read 1").Split('?');
                 main_pbar.Value = 0;
                 main_ptext.Content = "データアンインストール処理中...";
                 try
@@ -535,17 +767,16 @@ namespace ark_server_utility
                 
                 main_pbar.Value = 50;
                 main_ptext.Content = "インストール処理中...";
-                string[] arr = IpcConnect("settings read 1").Split(',');
+                string[] arr = IpcConnect("settings read 1").Split('?');
                 main_pbar.Value = 75;
                 main_ptext.Content = "インストール処理中...";
                 /// SteamCMDよりARKをダウンロード
                 ProcessStartInfo processStartInfo = new ProcessStartInfo(@"SteamCMD\\steamcmd.exe", "+login anonymous +force_install_dir " + @arr[2] + " +app_update 376030 +quit");
                 Process steamcmd_installer = Process.Start(processStartInfo);
                 steamcmd_installer.WaitForExit();
-
-                int exitCode = steamcmd_installer.ExitCode;
-                Console.WriteLine(exitCode);
-                if (exitCode == 1)
+                int eCode = steamcmd_installer.ExitCode;
+                Console.WriteLine(eCode);
+                if (eCode == 1 || eCode == 0)
                 {
                     main_pbar.Value = 100;
                     main_ptext.Content = "インストールに成功しました。";
@@ -565,6 +796,7 @@ namespace ark_server_utility
                 }
             }
         }
+
         private void install_dir_bt_Click(object sender, RoutedEventArgs e)
         {
             using (var cofd = new CommonOpenFileDialog()
@@ -590,13 +822,15 @@ namespace ark_server_utility
             new_value++;
 
             Console.WriteLine(new_value.ToString());
-            Console.WriteLine(IpcConnect("settings write server" + new_value + " TheIsland C:\\").ToString());
+            Console.WriteLine(IpcConnect("settings write server" + new_value + "?TheIsland?C:\\?27015?7777").ToString());
 
             server_list.Items.Add("server" + new_value);
             server_list.Text = "server" + new_value;
             server_name.Text = "server" + new_value;
-            label_name.Content = "サーバー名：server" + new_value;
-            label_map.Content = "マップ名：The Island";
+            label_name.Text = "サーバー名：server" + new_value;
+            label_map.Text = "マップ名：The Island";
+            query_port.Text = "27015";
+            game_port.Text = "7777";
             server_dir.Text = "C:\\";
             label_dir.Content = "ディレクトリ：C:\\";
             game_port.IsEnabled = false;
@@ -605,8 +839,6 @@ namespace ark_server_utility
             server_pass_bool.IsEnabled = false;
             admin_pass.IsEnabled = false;
             del_list.IsEnabled = true;
-
-
             map.SelectedValue = "TheIsland";
         }
 
@@ -614,21 +846,32 @@ namespace ark_server_utility
         {
             string server = server_list.Text;
             int index = server_list.Items.IndexOf(server);
-            Console.WriteLine(index.ToString());
-            string[] arr = IpcConnect("settings read " + index).Split(',');
+            string[] arr = IpcConnect("settings read " + index).Split('?');
             Console.WriteLine(arr.ToString());
+            // WebAPIを取得する
             server_name.Text = arr[0];
-            label_name.Content = "サーバー名：" + arr[0];
+            label_name.Text = "サーバー名：" + arr[0];
             map.Text = arr[1];
-            label_map.Content = "マップ名：" + arr[1];
+            label_map.Text = "マップ名：" + arr[1];
             server_dir.Text = arr[2];
-            label_dir.Content = "ディレクトリ：" + arr[2];
+            label_dir.Text = "ディレクトリ：" + arr[2];
+            query_port.Text = arr[3];
+            game_port.Text = arr[4];
         }
 
         private void arg_setting_change(object sender, RoutedEventArgs e)
         {
-            ;
+            string rt = IpcConnect("exec_arg edit " + (server_list.SelectedIndex+1) + " 2 " + arg_arg.Text + " " + arg_value.Text);
+            if (rt != "OK")
+            {
+                System.Windows.Forms.MessageBox.Show("設定保存時にエラーが発生しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            else
+            {
+                System.Windows.Forms.MessageBox.Show("保存しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+            }
         }
+
         private void arg_list_changed(object sender, RoutedEventArgs e)
         {
             if (arg_setting.SelectedItem == null) return;
@@ -637,31 +880,9 @@ namespace ark_server_utility
             arg_detail.Text = item.detail;
         }
 
-        private void connect_pro(object sender, EventArgs e)
-        {
-            string rt = IpcConnect(server_name.Text);
-            System.Windows.Forms.MessageBox.Show("・返り値\n" + rt, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-        }
-
-        private void send_pro(object sender, EventArgs e)
-        {
-            IpcSend(server_name.Text);
-        }
-
-        private void get_pid(object sender, EventArgs e)
-        {
-            string pid = IpcConnect("debug pid");
-            System.Windows.Forms.MessageBox.Show("プロセスID:" + pid, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-        }
-
-        private void get_addr(object sender, EventArgs e)
-        {
-            string addr = IpcConnect("debug addr");
-            System.Windows.Forms.MessageBox.Show("アドレス:" + addr, "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-        }
-
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            loop_arg = "exit";
             IpcSend("exit");
         }
 
@@ -671,8 +892,6 @@ namespace ark_server_utility
             {
                 return;
             }
-            Console.WriteLine(map.SelectedValue);
-            Console.WriteLine(map.SelectedValue == "Custom");
             if (map.SelectedValue.ToString() == "Custom")
             {
                 custom_map_name.IsEnabled = true;
@@ -683,21 +902,114 @@ namespace ark_server_utility
                 custom_map_name.IsEnabled = false;
                 map_id.IsEnabled = false;
             }
+            // set_changed = 1;
         }
 
+        // サーバーリスト変更
         private void server_list_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            Console.WriteLine((server_list.SelectedIndex + 1));
+            if(server_list.SelectedItem == null)
+            {
+                return;
+            }
+            if (set_changed == 1)
+            {
+                DialogResult save = System.Windows.Forms.MessageBox.Show("設定は変更されています。\n保存しますか？", "ARK Server Utility", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                if (save == System.Windows.Forms.DialogResult.Yes)
+                {
+                    if (map.SelectedValue.ToString() == "Custom")
+                    {
+                        if (custom_map_name.Text == "" || map_id.Text == "")
+                        {
+                            System.Windows.Forms.MessageBox.Show("マップをカスタムマップにする場合は、「マップ名」と「マップID」が必要です。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                            return;
+                        }
+                    }
+                    server_name.Text = server_name.Text.Replace(" ", "_").Replace("?", "_");
+                    Console.WriteLine(server_name.Text);
+                    label_name.Text = "サーバー名：" + server_name.Text;
+                    label_dir.Text = "ディレクトリ：" + server_dir.Text;
+                    server_list.Items.Insert(server_list.SelectedIndex + 1, server_name.Text);
+                    server_list.Items.RemoveAt(server_list.SelectedIndex);
+
+                    Console.WriteLine(server_name.Text);
+                    string rs;
+                    Console.WriteLine(map.SelectedValue);
+                    if (map.SelectedValue.ToString() == "Custom")
+                    {
+                        label_map.Text = "マップ名：" + custom_map_name.Text;
+                        rs = IpcConnect("settings edit 1?" + server_name.Text + "?Custom/" + custom_map_name.Text + "/" + map_id.Text + "?" + server_dir.Text + "?" + query_port.Text + "?" + game_port.Text);
+                    }
+                    else
+                    {
+
+                        Console.WriteLine(server_name.Text);
+                        label_map.Text = "マップ名：" + map.Text;
+                        rs = IpcConnect("settings edit 1?" + server_name.Text + " " + map.SelectedValue + " " + server_dir.Text + "?" + query_port.Text + "?" + game_port.Text);
+                    }
+                    Console.WriteLine(rs);
+
+                    server_list.Text = server_name.Text;
+                    Console.WriteLine(server_name.Text);
+                    if (rs != "OK")
+                    {
+                        System.Windows.Forms.MessageBox.Show("設定保存時にエラーが発生しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    else
+                    {
+                        // set_changed = 0;
+                        System.Windows.Forms.MessageBox.Show("保存しました。", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                    }
+                    return;
+                }
+            }
+            Console.WriteLine("list:"+(server_list.SelectedIndex + 1));
             string setting = IpcConnect("settings read " + (server_list.SelectedIndex + 1));
-            string[] load_settings = setting.Split(',');
+            string[] load_settings = setting.Split('?');
+            Console.WriteLine(setting);
+
+            if (!File.Exists(@load_settings[2] + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe"))
+            {
+                // サーバーデータがインストールされていない場合の処理
+                start_server.IsEnabled = false;
+                install_server.Content = "インストール";
+                string version = IpcConnect("webapi version 3");
+                latest_version.Content = "配信されている最新バージョン：" + version;
+                current_version.Content = "インストールされていません。";
+                update_bt.Content = "アップデート";
+            }
+            else
+            {
+                // サーバーデータがインストールされている場合の処理
+                start_server.IsEnabled = true;
+                install_server.Content = "アンインストール";
+                string version = IpcConnect("webapi version 2 " + (server_list.SelectedIndex + 1));
+                Console.WriteLine("バージョン:[" + version + "]");
+                string[] vers = version.Split(',');
+                latest_version.Content = "配信されている最新バージョン：" + vers[0];
+                current_version.Content = "インストールされているバージョン：" + vers[1].Replace("\r", "").Replace("\n", "");
+                update_bt.IsEnabled = true;
+
+                if (float.Parse(vers[0]) > float.Parse(vers[1]))
+                {
+                    update_bt.Content = "アップデート";
+                }
+                else
+                {
+                    update_bt.Content = "ファイルのチェック";
+                }
+                server_pass_bool.IsEnabled = true;
+                admin_pass.IsEnabled = true;
+                arg_setting_box.IsEnabled = true;
+            }
 
             server_name.Text = load_settings[0];
-            label_name.Content = "サーバー名：" + load_settings[0];
+            label_name.Text = "サーバー名：" + load_settings[0];
 
             if (load_settings[0].Contains("Custom/") == false)
             {
                 map.SelectedValue = load_settings[1];
-                label_map.Content = "マップ名：" + load_settings[1];
+                label_map.Text = "マップ名：" + load_settings[1];
                 custom_map_name.Text = "";
                 map_id.Text = "";
                 custom_map_name.IsEnabled = false;
@@ -708,7 +1020,7 @@ namespace ark_server_utility
                 // Custom/MapName/MapID
                 string[] vs = load_settings[1].Split('/');
                 map.SelectedValue = vs[0];
-                label_map.Content = "マップ名：" + vs[1];
+                label_map.Text = "マップ名：" + vs[1];
                 custom_map_name.Text = vs[1];
                 map_id.Text = vs[2];
                 custom_map_name.IsEnabled = true;
@@ -791,12 +1103,63 @@ namespace ark_server_utility
 
         private void del_list_Click(object sender, RoutedEventArgs e)
         {
-            if(IpcConnect("settings value") == "2")
+            int index = server_list.SelectedIndex;
+            Console.WriteLine(index);
+            if (IpcConnect("settings value") == "2")
             {
                 del_list.IsEnabled = false;
             }
-            IpcSend("settings del " + (map.SelectedIndex+1));
-            map.SelectedIndex = map.SelectedIndex - 1;
+            IpcSend("settings del " + (index+1));
+            server_list.Items.RemoveAt(index);
+            if (index != 0)
+            {
+                server_list.SelectedIndex = index - 1;
+            }
+            else
+            {
+                server_list.SelectedIndex = 0;
+            }
+        }
+
+        private void check_network(object sender, EventArgs e)
+        {
+            string[] arr = IpcConnect("netcheck").Split(',');
+            if (arr[0] == "True")
+            {
+                System.Windows.Forms.MessageBox.Show("ネットワーク：接続中\nグローバルIP：" + arr[1] + "\nローカルIP：" + arr[2], "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+            }
+            else
+            {
+                System.Windows.Forms.MessageBox.Show("ネットワーク：未接続\nグローバルIP：不明\nローカルIP：不明", "ARK Server Utility", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+            }
+        }
+
+        private void launch_check_port(object sender, EventArgs e)
+        {
+            var pc = new can_use_port();
+            pc.Show();
+        }
+
+        private void server_start(object sender, RoutedEventArgs e)
+        {
+            bool server_starting = false;
+            /// 上は仮置き
+            /// サーバーの実行ステータスをboolで取得する
+            /// 基本的にはWebAPIとかで取っていいと思う
+
+            /// https://github.com/cyilcode/SteamQueryNet
+            /// IServerQuery serverQuery = new SteamQueryNet.ServerQuery("localhost," + query_port.Text);
+
+            if (server_starting == true)
+            {
+                /// 現在のサーバーをシャットダウンする
+            }
+            else
+            {
+                /// 現在のサーバーを実行する
+                ProcessStartInfo ark_game = new ProcessStartInfo(@server_dir.Text + @"\\ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe", map.Text + "?listen?RCONEnabled=True?RCONPort=" + rcon_port.Text);
+                Process.Start(ark_game);
+            }
         }
 
         private void start_server_Click(object sender, RoutedEventArgs e)
